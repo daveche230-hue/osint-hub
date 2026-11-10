@@ -96,9 +96,11 @@ const I = {
   util:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10.5 6.5a4 4 0 1 0 5 5L21 17v3h-3l-5.5-5.5a4 4 0 0 0-5-5z"/></svg>'
 };
 
-// Функция для запросов к нашему FastAPI бэкенду
+// Базовый URL вашего туннеля с ПК
+const API_BASE = 'https://appearing-theories-sword-bristol.trycloudflare.com';
+
 async function apiFetch(tool, value) {
-  const res = await fetch('/api/lookup', {
+  const res = await fetch(`${API_BASE}/api/lookup`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -118,7 +120,7 @@ async function apiFetch(tool, value) {
 
 async function loadMe() {
   try {
-    const res = await fetch('/api/me', {
+    const res = await fetch(`${API_BASE}/api/me`, {
       headers: { 'X-Init-Data': tg?.initData || '' }
     });
     if (res.ok) {
@@ -171,7 +173,7 @@ function open(i){
 
     try {
       const resp = await apiFetch(t.tool, val);
-      loadMe(); // Обновляем баланс после списания
+      loadMe();
 
       if (resp.result) {
         o.innerHTML=`<div class="pre">${esc(JSON.stringify(resp.result, null, 2))}</div>`;
@@ -193,11 +195,10 @@ function open(i){
   window.scrollTo(0,0);
 }
 
-// Опрос статуса тяжелых задач (polling)
 async function pollJob(jobId, container) {
   const interval = setInterval(async () => {
     try {
-      const res = await fetch(`/api/job/${jobId}`, {
+      const res = await fetch(`${API_BASE}/api/job/${jobId}`, {
         headers: { 'X-Init-Data': tg?.initData || '' }
       });
       if (!res.ok) return;
