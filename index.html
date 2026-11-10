@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>OSINT Hub</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#17212b;--fg:#f5f5f5;--mut:#8b9aa8;--card:#1c2733;--bd:#26333f;
+    --acc:#2aabee;--inp:#1c2733;--sec:#222f3c;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:12px 14px 28px}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .logo{width:34px;height:34px;border-radius:10px;background:var(--acc);display:grid;place-items:center;color:#fff;flex:0 0 34px}
+  .logo svg{width:19px;height:19px}
+  .tt{font-weight:500;font-size:15px}
+  .ss{font-size:11px;color:var(--mut)}
+  .srch{display:flex;align-items:center;gap:8px;background:var(--inp);border:1px solid var(--bd);border-radius:11px;padding:0 10px;height:40px}
+  .srch input{flex:1;background:none;border:0;outline:0;color:var(--fg);font-size:14px;font-family:inherit;min-width:0}
+  .chips{display:flex;gap:6px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{background:var(--sec);color:var(--fg);border:1px solid transparent;border-radius:20px;padding:5px 11px;font-size:12px;white-space:nowrap;font-family:inherit;cursor:pointer}
+  .chip.on{background:var(--acc);color:#fff}
+  .note{font-size:11.5px;color:var(--mut);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:9px 11px;margin:10px 0 14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:12px;text-align:left;font-family:inherit;color:var(--fg);cursor:pointer;display:flex;gap:9px;align-items:flex-start}
+  .card:active{background:var(--sec)}
+  .ico{width:28px;height:28px;flex:0 0 28px;border-radius:8px;background:var(--sec);color:var(--acc);display:grid;place-items:center}
+  .ico svg{width:15px;height:15px}
+  .cn{font-size:12.5px;font-weight:500;margin-bottom:2px}
+  .cd{font-size:10.5px;color:var(--mut);line-height:1.3}
+  .hide{display:none!important}
+  .back{display:flex;align-items:center;gap:5px;background:none;border:0;color:var(--acc);font-size:13px;font-family:inherit;padding:6px 0;margin-bottom:6px;cursor:pointer}
+  .back svg{width:15px;height:15px}
+  h1{font-size:16px;font-weight:500;margin:0 0 3px}
+  .dsc{font-size:12px;color:var(--mut);margin:0 0 12px}
+  label{display:block;font-size:11px;color:var(--mut);margin-bottom:5px}
+  input.f,textarea{width:100%;background:var(--inp);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;color:var(--fg);font-size:14px;font-family:inherit;outline:0}
+  input.f:focus{border-color:var(--acc)}
+  .run{width:100%;background:var(--acc);color:#fff;border:0;border-radius:10px;padding:11px;font-size:14px;font-weight:500;font-family:inherit;margin-top:12px;cursor:pointer}
+  .run:disabled{opacity:.5}
+  .out{margin-top:12px}
+  h3{font-size:11px;color:var(--mut);font-weight:400;margin:14px 0 6px}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:7px 10px;background:var(--card);border-bottom:1px solid var(--bd);font-size:12.5px}
+  .row:last-child{border-bottom:0;border-radius:0 0 9px 9px}
+  .row:first-child{border-radius:9px 9px 0 0}
+  .k{color:var(--mut);flex:0 0 auto}
+  .v{text-align:right;word-break:break-all;font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+  .ok{color:#4fae4e}.er{color:#e05252}
+  .pre{background:var(--card);border:1px solid var(--bd);border-radius:9px;padding:10px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;white-space:pre-wrap;word-break:break-all}
+  .ll a{display:flex;justify-content:space-between;padding:9px 10px;background:var(--card);border-bottom:1px solid var(--bd);color:var(--fg);text-decoration:none;font-size:12.5px}
+  .ll a:first-child{border-radius:9px 9px 0 0}
+  .ll a:last-child{border-bottom:0;border-radius:0 0 9px 9px}
+  .ll a span{color:var(--mut);font-size:11px}
+  .b2{background:var(--sec);color:var(--fg);border:1px solid var(--bd);border-radius:9px;padding:8px 12px;font-size:12.5px;font-family:inherit;margin-top:10px;cursor:pointer}
+  .thumb{width:80px;height:80px;border-radius:10px;border:1px solid var(--bd);margin-top:8px;object-fit:cover}
+  .err{background:#3a1f1f;border:1px solid #e05252;border-radius:9px;padding:9px 11px;font-size:12px}
+  .sp{display:inline-block;width:12px;height:12px;border:2px solid var(--mut);border-top-color:var(--acc);border-radius:50%;animation:r .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes r{to{transform:rotate(360deg)}}
+  .frow{display:flex;gap:7px;align-items:center;padding:5px 7px;background:var(--card);border:1px solid var(--bd);border-radius:7px;margin-bottom:4px}
+  .frow input{accent-color:var(--acc);width:15px;height:15px;margin:0}
+  .frow label{margin:0;font-size:12px;color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></div>
+  <div><div class="tt">OSINT Hub</div><div class="ss">по открытым источникам</div></div>
+</div>
+
+<div id="list">
+  <div class="srch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mut)" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg><input id="q" placeholder="Поиск инструмента"></div>
+  <div class="chips" id="chips"></div>
+  <div class="note">Часть проверок работает вживую (DNS, IP, хеши). Остальное открывает внешние сервисы.</div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div id="tool" class="hide"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("secondary_bg_color"); }
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s||"").trim().replace(/^@/,"");
+const I = {
+  tg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 4 3 11l5 2 2 6 3-4 5 3z"/></svg>',
+  nick:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>',
+  email:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
+  dom:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>',
+  ip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg>',
+  geo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  code:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></svg>',
+  util:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10.5 6.5a4 4 0 1 0 5 5L21 17v3h-3l-5.5-5.5a4 4 0 0 0-5-5z"/></svg>'
+};
+
+const PLAT=[["GitHub","https://github.com/{u}"],["GitLab","https://gitlab.com/{u}"],["Reddit","https://www.reddit.com/user/{u}"],["X","https://x.com/{u}"],["Instagram","https://instagram.com/{u}"],["TikTok","https://tiktok.com/@{u}"],["VK","https://vk.com/{u}"],["OK","https://ok.ru/{u}"],["Facebook","https://facebook.com/{u}"],["LinkedIn","https://linkedin.com/in/{u}"],["Pinterest","https://pinterest.com/{u}"],["Telegram","https://t.me/{u}"],["YouTube","https://youtube.com/@{u}"],["Twitch","https://twitch.tv/{u}"],["Steam","https://steamcommunity.com/id/{u}"],["SoundCloud","https://soundcloud.com/{u}"],["Medium","https://medium.com/@{u}"],["Dev.to","https://dev.to/{u}"],["Habr","https://habr.com/ru/users/{u}/"],["Behance","https://behance.net/{u}"],["Dribbble","https://dribbble.com/{u}"],["Keybase","https://keybase.io/{u}"],["Kaggle","https://kaggle.com/{u}"],["HackerNews","https://news.ycombinator.com/user?id={u}"],["npm","https://npmjs.com/~{u}"],["Docker Hub","https://hub.docker.com/u/{u}"],["Patreon","https://patreon.com/{u}"],["Strava","https://strava.com/athletes/{u}"],["Bitbucket","https://bitbucket.org/{u}"],["Mastodon","https://mstdn.social/@{u}"]];
+const CC=[["7","Россия / Казахстан"],["1","США / Канада"],["44","Великобритания"],["49","Германия"],["33","Франция"],["39","Италия"],["34","Испания"],["48","Польша"],["380","Украина"],["375","Беларусь"],["995","Грузия"],["374","Армения"],["994","Азербайджан"],["998","Узбекистан"],["90","Турция"],["971","ОАЭ"],["972","Израиль"],["86","Китай"],["81","Япония"],["91","Индия"],["55","Бразилия"],["31","Нидерланды"],["46","Швеция"],["41","Швейцария"],["420","Чехия"],["40","Румыния"],["370","Литва"],["371","Латвия"],["372","Эстония"]];
+
+function md5(str){
+  function rl(x,c){return (x<<c)|(x>>>(32-c))}
+  function ad(a,b){return (a+b)|0}
+  var K=[],i;for(i=0;i<64;i++)K[i]=(Math.abs(Math.sin(i+1))*4294967296)|0;
+  var bytes=[],s=unescape(encodeURIComponent(str));
+  for(i=0;i<s.length;i++)bytes.push(s.charCodeAt(i)&255);
+  var bl=bytes.length*8;bytes.push(128);
+  while(bytes.length%64!==56)bytes.push(0);
+  for(i=0;i<8;i++)bytes.push((bl>>>(8*i))&255);
+  var a0=1732584193,b0=-271733879,c0=-1732584194,d0=271733878;
+  for(var o=0;o<bytes.length;o+=64){
+    var M=[];for(i=0;i<16;i++)M[i]=bytes[o+i*4]|(bytes[o+i*4+1]<<8)|(bytes[o+i*4+2]<<16)|(bytes[o+i*4+3]<<24);
+    var A=a0,B=b0,C=c0,D=d0;
+    for(i=0;i<64;i++){
+      var F,g;
+      if(i<16){F=(B&C)|(~B&D);g=i}
+      else if(i<32){F=(D&B)|(~D&C);g=(5*i+1)%16}
+      else if(i<48){F=B^C^D;g=(3*i+5)%16}
+      else{F=C^(B|~D);g=(7*i)%16}
+      var t=D;D=C;C=B;
+      B=ad(B,rl(ad(ad(A,F),ad(K[i],M[g])),i<16?7:i<32?12:i<48?17:22));A=t;
+    }
+    a0=ad(a0,A);b0=ad(b0,B);c0=ad(c0,C);d0=ad(d0,D);
+  }
+  function hx(n){var s="";for(var j=0;j<4;j++)s+=((n>>>(8*j))&255).toString(16).padStart(2,"0");return s}
+  return hx(a0)+hx(b0)+hx(c0)+hx(d0);
+}
+async function sha(a,t){const d=await crypto.subtle.digest(a,new TextEncoder().encode(t));return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+async function doh(n,t){const r=await fetch("https://dns.google/resolve?name="+encodeURIComponent(n)+"&type="+t);if(!r.ok)throw new Error("DNS "+r.status);return r.json()}
+
+const rows = p => '<div>'+p.map(([k,v,c])=>`<div class="row"><div class="k">${esc(k)}</div><div class="v ${c||""}">${v}</div></div>`).join("")+'</div>';
+const links = l => '<div class="ll">'+l.map(([n,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}<span>открыть</span></a>`).join("")+'</div>';
+const cpb = t => `<button class="b2" data-copy="${esc(t)}">Скопировать</button>`;
+
+const T=[
+{c:"tg",n:"Профиль Телеграм",d:"Ссылки и предпросмотр по юзернейму",i:"tg",p:"username без @",f:async v=>{
+  const u=norm(v);if(!u)throw new Error("Нужен юзернейм");
+  return `<h3>переходы</h3>`+links([["t.me/"+u,"https://t.me/"+u],["tgstat","https://tgstat.ru/channel/@"+u],["telemetr","https://telemetr.me/@"+u],["t.me/s/"+u,"https://t.me/s/"+u],["Google",'https://www.google.com/search?q=%22@'+encodeURIComponent(u)+'%22']])
+  +`<h3>предпросмотр</h3><iframe src="https://t.me/${encodeURIComponent(u)}?embed=1&mode=tme" style="width:100%;height:290px;border:1px solid var(--bd);border-radius:10px;background:var(--card)"></iframe>`;
+}},
+{c:"tg",n:"Поиск каналов",d:"Поиск публичных каналов по теме",i:"tg",p:"ключевое слово",f:async v=>{
+  if(!v.trim())throw new Error("Введи запрос");const q=encodeURIComponent(v.trim());
+  return `<h3>каталоги</h3>`+links([["tgstat","https://tgstat.ru/search?q="+q],["telemetr","https://telemetr.me/search?q="+q],["lyzem","https://lyzem.com/search?q="+q],["Google site:t.me","https://www.google.com/search?q=site%3At.me+"+q]]);
+}},
+{c:"nick",n:"Скан по платформам",d:"30 сервисов: занятость никнейма",i:"nick",p:"nickname",f:async v=>{
+  const u=norm(v);if(!u)throw new Error("Нужен никнейм");
+  const it=PLAT.map(([n,t],i)=>`<div class="frow"><input type="checkbox" id="p${i}" checked data-u="${esc(t.replace("{u}",u))}"><label for="p${i}">${esc(n)}</label></div>`).join("");
+  return `<h3>платформы</h3>${it}<button class="b2" id="op">Открыть отмеченные</button><button class="b2" id="op5">Первые 5</button>`;
+}},
+{c:"nick",n:"Вариации никнейма",d:"Мутации и производные формы",i:"nick",p:"nickname",f:async v=>{
+  const u=norm(v).toLowerCase();if(!u)throw new Error("Нужен никнейм");
+  const o=new Set([u,u.replace(/[._-]/g,""),u+"1",u+"_",u+"99","real"+u,u+"official","the"+u,u.replace(/o/g,"0").replace(/i/g,"1"),u+"_dev",u+"_ru"]);["x","dev","pro","me"].forEach(s=>o.add(u+"_"+s));
+  const r=[...o].join("\n");return `<div class="pre">${esc(r)}</div>`+cpb(r);
+}},
+{c:"email",n:"Проверка email",d:"Синтаксис, MX, SPF, Gravatar",i:"email",p:"name@example.com",f:async v=>{
+  const e=v.trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e))throw new Error("Невалидный email");
+  const [l,d]=e.split("@");let mx="—",mc="";
+  try{const j=await doh(d,"MX");const a=(j.Answer||[]).filter(r=>r.type===15);if(a.length){mx=a.map(r=>r.data.split(" ").pop()).join(", ");mc="ok"}else{mx="нет MX";mc="er"}}catch(x){mx="ошибка"}
+  const h=md5(e);
+  return rows([["email",esc(e)],["домен",esc(d)],["MX",esc(mx),mc],["MD5",esc(h)]])
+  +`<h3>gravatar</h3><img class="thumb" src="https://www.gravatar.com/avatar/${h}?d=404&s=160" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'pre',textContent:'не найден'}))">`
+  +`<h3>дальше</h3>`+links([["HIBP","https://haveibeenpwned.com/account/"+encodeURIComponent(e)],["Google",'https://www.google.com/search?q=%22'+encodeURIComponent(e)+'%22']]);
+}},
+{c:"phone",n:"Инфо по номеру",d:"Страна по коду, E.164, мессенджеры",i:"phone",p:"+7 999 123-45-67",f:async v=>{
+  const d=v.replace(/[^\d]/g,"");if(!d)throw new Error("Введи номер");
+  const cc=CC.filter(([c])=>d.startsWith(c)).sort((a,b)=>b[0].length-a[0].length)[0];
+  return rows([["код","+"+(cc?cc[0]:"?")],["регион",esc(cc?cc[1]:"не определён")],["E.164","+"+d]])
+  +`<h3>мессенджеры</h3>`+links([["Telegram","https://t.me/+"+d],["WhatsApp","https://wa.me/"+d],["Google",'https://www.google.com/search?q=%22%2B'+d+'%22']]);
+}},
+{c:"dom",n:"DNS-записи",d:"A, AAAA, MX, NS, TXT",i:"dom",p:"example.com",f:async v=>{
+  const d=v.trim().replace(/^https?:\/\//,"").split("/")[0];if(!d.includes("."))throw new Error("Нужен домен");
+  let o="";
+  for(const [t,c] of [["A",1],["AAAA",28],["MX",15],["NS",2],["TXT",16]]){
+    try{const j=await doh(d,t);const a=(j.Answer||[]).filter(r=>r.type===c);
+      o+=`<div class="row"><div class="k">${t}</div><div class="v ${a.length?'ok':''}">${a.length?esc(a.map(r=>r.data).join("\n")):'—'}</div></div>`;
+    }catch(x){o+=`<div class="row"><div class="k">${t}</div><div class="v">ошибка</div></div>`}
+  }
+  return `<h3>${esc(d)}</h3><div>${o}</div>`;
+}},
+{c:"dom",n:"Почтовая гигиена",d:"SPF, DMARC, DKIM",i:"dom",p:"example.com",f:async v=>{
+  const d=v.trim().split("/")[0];if(!d.includes("."))throw new Error("Нужен домен");
+  const g=async(n,t)=>{try{const j=await doh(n,t);return (j.Answer||[]).map(r=>r.data).join(" | ")}catch(e){return ""}};
+  const spf=await g(d,"TXT"),dm=await g("_dmarc."+d,"TXT");
+  return rows([["SPF",/v=spf1/.test(spf)?"есть":"нет",/v=spf1/.test(spf)?"ok":"er"],["DMARC",dm?"есть":"нет",dm?"ok":"er"],["политика",(dm.match(/p=(none|quarantine|reject)/)||[,"нет"])[1]]]);
+}},
+{c:"dom",n:"Архив и история",d:"Wayback, кеш, поддомены",i:"dom",p:"example.com/page",f:async v=>{
+  const u=v.trim();if(!u)throw new Error("Введи URL");
+  const full=u.startsWith("http")?u:"https://"+u;const host=full.replace(/^https?:\/\//,"").split("/")[0];
+  let a="—";try{const r=await fetch("https://archive.org/wayback/available?url="+encodeURIComponent(full));const j=await r.json();a=(j.archived_snapshots&&j.archived_snapshots.closest)?j.archived_snapshots.closest.url:"снимков нет"}catch(e){a="ошибка"}
+  return rows([["снимок",a.includes("http")?`<a href="${esc(a)}" target="_blank" style="color:var(--acc)">открыть</a>`:esc(a)]])
+  +`<h3>ещё</h3>`+links([["Все снимки","https://web.archive.org/web/*/"+full],["Поддомены crt.sh","https://crt.sh/?q=%25."+host],["Google site:","https://www.google.com/search?q=site%3A"+host]]);
+}},
+{c:"ip",n:"Инфо по IP",d:"Гео, провайдер, ASN",i:"ip",p:"8.8.8.8",f:async v=>{
+  const ip=v.trim();if(!ip)throw new Error("Введи IP");
+  const j=await (await fetch("https://ipwho.is/"+encodeURIComponent(ip))).json();
+  if(!j.success)throw new Error("IP не распознан");
+  return rows([["IP",esc(j.ip)],["тип",esc(j.type||"—")],["страна",esc(j.country||"—")],["город",esc(j.city||"—")],["провайдер",esc((j.connection&&j.connection.isp)||"—")],["ASN",esc((j.connection&&j.connection.asn)||"—")]])
+  +`<h3>дальше</h3>`+links([["Карта","https://www.google.com/maps?q="+j.latitude+","+j.longitude],["Shodan","https://www.shodan.io/host/"+encodeURIComponent(j.ip)]]);
+}},
+{c:"geo",n:"Координаты",d:"Decimal ↔ DMS, карты",i:"geo",p:"55.7558, 37.6173",f:async v=>{
+  const m=v.replace(/,/g," ").split(/\s+/).filter(Boolean);if(m.length<2)throw new Error("Нужны две координаты");
+  const la=+m[0],lo=+m[1];if(isNaN(la)||isNaN(lo))throw new Error("Не числа");
+  const dms=(x,p,n)=>{const a=Math.abs(x),d=Math.floor(a),mi=Math.floor((a-d)*60),s=((a-d)*60-mi)*60;return `${d}°${mi}'${s.toFixed(1)}"${x>=0?p:n}`};
+  return rows([["decimal",esc(la+", "+lo)],["DMS",esc(dms(la,"N","S")+" "+dms(lo,"E","W"))]])
+  +`<h3>карты</h3>`+links([["Google","https://www.google.com/maps?q="+la+","+lo],["Яндекс","https://yandex.ru/maps/?pt="+lo+","+la+"&z=17"],["OSM","https://www.openstreetmap.org/?mlat="+la+"&mlon="+lo]]);
+}},
+{c:"code",n:"Base64",d:"Кодирование и декодирование",i:"code",p:"текст",f:async v=>{
+  if(!v)throw new Error("Введи текст");
+  let e=btoa(unescape(encodeURIComponent(v))),d="";
+  try{d=decodeURIComponent(escape(atob(v.trim())))}catch(x){d="—"}
+  return rows([["base64",esc(e)],["обратно",esc(d)]])+cpb(e);
+}},
+{c:"code",n:"Разбор JWT",d:"Header и payload",i:"code",p:"eyJhbGciOi...",f:async v=>{
+  const p=v.trim().split(".");if(p.length<2)throw new Error("Не JWT");
+  const dec=s=>JSON.stringify(JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/"))))),null,2);
+  return `<h3>header</h3><div class="pre">${esc(dec(p[0]))}</div><h3>payload</h3><div class="pre">${esc(dec(p[1]))}</div>`;
+}},
+{c:"util",n:"Хеши текста",d:"MD5, SHA-1, SHA-256, SHA-512",i:"util",p:"текст",f:async v=>{
+  if(!v)throw new Error("Введи текст");
+  const [a,b,c]=await Promise.all([sha("SHA-1",v),sha("SHA-256",v),sha("SHA-512",v)]);
+  return rows([["MD5",esc(md5(v))],["SHA-1",esc(a)],["SHA-256",esc(b)],["SHA-512",esc(c)]])+cpb(b);
+}},
+{c:"util",n:"Timestamp",d:"Unix ↔ дата",i:"util",p:"1712345678 или ISO",f:async v=>{
+  const s=v.trim();if(!s)throw new Error("Введи значение");
+  const d=/^\d+$/.test(s)?new Date(s.length>10?+s:+s*1000):new Date(s);
+  if(isNaN(d))throw new Error("Не распознано");
+  return rows([["unix сек",esc(Math.floor(d/1000))],["ISO",esc(d.toISOString())],["локально",esc(d.toLocaleString("ru-RU"))]]);
+}},
+{c:"util",n:"Генераторы",d:"UUID и пароли",i:"util",p:null,f:async()=>{
+  const pw=n=>{const a="abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*";return Array.from(crypto.getRandomValues(new Uint32Array(n))).map(x=>a[x%a.length]).join("")};
+  const u=crypto.randomUUID();
+  return rows([["uuid",esc(u)],["пароль 20",esc(pw(20))]])+cpb(u);
+}},
+{c:"util",n:"Google dorks",d:"Конструктор операторов",i:"util",p:"домен или слово",f:async v=>{
+  const q=v.trim();if(!q)throw new Error("Введи запрос");
+  return links([["Документы",`https://www.google.com/search?q=${encodeURIComponent("site:"+q+" filetype:pdf")}`],["Таблицы",`https://www.google.com/search?q=${encodeURIComponent("site:"+q+" filetype:xlsx")}`],["Логины",`https://www.google.com/search?q=${encodeURIComponent("site:"+q+" inurl:login")}`],["Индексы",`https://www.google.com/search?q=${encodeURIComponent("site:"+q+' intitle:"index of"')}`],["Конфиги",`https://www.google.com/search?q=${encodeURIComponent("site:"+q+" filetype:env")}`]]);
+}}
+];
+
+const CATS=[["all","Все"],["tg","Телеграм"],["nick","Никнеймы"],["email","Email"],["phone","Телефон"],["dom","Домен"],["ip","IP"],["geo","Гео"],["code","Кодирование"],["util","Утилиты"]];
+let cat="all";
+
+function drawChips(){ $("#chips").innerHTML = CATS.map(([k,n])=>`<button class="chip ${k===cat?'on':''}" data-c="${k}">${n}</button>`).join(""); }
+function drawList(){
+  const q=$("#q").value.toLowerCase();
+  let l=T.filter(t=>(cat==="all"||t.c===cat)&&(!q||(t.n+t.d).toLowerCase().includes(q)));
+  $("#grid").innerHTML = l.map((t,idx)=>`<button class="card" data-i="${T.indexOf(t)}"><div class="ico">${I[t.i]}</div><div><div class="cn">${esc(t.n)}</div><div class="cd">${esc(t.d)}</div></div></button>`).join("") || '<div style="grid-column:1/-1;text-align:center;color:var(--mut);padding:24px 0;font-size:13px">Ничего не найдено</div>';
+}
+
+function open(i){
+  const t=T[i];
+  $("#list").classList.add("hide"); $("#tool").classList.remove("hide");
+  tg?.BackButton?.show(); tg?.BackButton?.onClick(close);
+  $("#tool").innerHTML = `<button class="back" id="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 6-6 6 6 6"/></svg>Назад</button>
+  <h1>${esc(t.n)}</h1><p class="dsc">${esc(t.d)}</p>
+  ${t.p?`<label>входные данные</label><input class="f" id="in" placeholder="${esc(t.p)}">`:""}
+  <button class="run" id="rn">${t.p?"Запустить":"Сгенерировать"}</button><div class="out" id="o"></div>`;
+  $("#bk").onclick = close;
+  const run = async () => {
+    const o=$("#o"); o.innerHTML='<div class="pre"><span class="sp"></span>Выполняю</div>';
+    try{
+      o.innerHTML = await t.f(t.p?$("#in").value:"");
+      if(i===T.findIndex(x=>x.n==="Скан по платформам")){
+        const go=a=>a.forEach((u,k)=>setTimeout(()=>tg?.openLink?tg.openLink(u):window.open(u,"_blank"),k*250));
+        $("#op").onclick=()=>go([...document.querySelectorAll("#o input:checked")].map(c=>c.dataset.u));
+        $("#op5").onclick=()=>go([...document.querySelectorAll("#o input:checked")].slice(0,5).map(c=>c.dataset.u));
+      }
+    }catch(e){ o.innerHTML=`<div class="err">${esc(e.message||"Ошибка")}</div>`; }
+  };
+  $("#rn").onclick = run;
+  if(!t.p) run();
+  else $("#in").focus();
+  window.scrollTo(0,0);
+}
+function close(){
+  $("#tool").classList.add("hide"); $("#list").classList.remove("hide");
+  $("#tool").innerHTML=""; tg?.BackButton?.hide();
+}
+
+$("#chips").onclick = e => { const b=e.target.closest("[data-c]"); if(!b)return; cat=b.dataset.c; drawChips(); drawList(); };
+$("#grid").onclick = e => { const c=e.target.closest("[data-i]"); if(c) open(+c.dataset.i); };
+$("#q").oninput = drawList;
+document.addEventListener("click", e => {
+  const b=e.target.closest("[data-copy]");
+  if(b){ navigator.clipboard.writeText(b.dataset.copy).then(()=>{const t=b.textContent;b.textContent="Скопировано";setTimeout(()=>b.textContent=t,1200)}) }
+});
+
+drawChips(); drawList();
+</script>
+</body>
+</html>
