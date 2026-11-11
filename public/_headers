@@ -1,3 +1,6 @@
 /*
-  Content-Security-Policy: frame-ancestors 'self' https: t.me tg: ;
-  X-Content-Type-Options: nosniff
+  Access-Control-Allow-Headers: Content-Type, X-Init-Data
+  Cache-Control: no-store
+
+/api/*
+  Cache-Control: no-store
