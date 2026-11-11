@@ -1,0 +1,13 @@
+name = "osint-hub"
+pages_build_output_dir = "./public"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB1"
+database_name = "osint"
+database_id = "ВСТАВЬ_ID_ПОСЛЕ_wrangler_d1_create"
+
+[vars]
+MAX_PROVIDERS = "6"
+JOB_TTL_MIN = "30"
