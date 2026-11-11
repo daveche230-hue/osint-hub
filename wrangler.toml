@@ -6,7 +6,11 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB1"
 database_name = "osint"
-database_id = "ВСТАВЬ_ID_ПОСЛЕ_wrangler_d1_create"
+database_id = "osint-hub"
+
+[[kv_namespaces]]
+binding = "DB"
+id = "c93100912148447c82f97629b6b38bcc"
 
 [vars]
 MAX_PROVIDERS = "6"
