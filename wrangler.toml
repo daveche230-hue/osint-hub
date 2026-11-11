@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB1"
 database_name = "osint"
-database_id = "osint-hub"
+database_id = "9d3e78b8-f6b2-4af7-88f2-9a836d1b305a"
 
 [[kv_namespaces]]
 binding = "DB"
