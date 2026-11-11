@@ -27,7 +27,6 @@
     padding-top:env(safe-area-inset-top);
     -webkit-font-smoothing:antialiased;
   }
-  /* единственный декоративный момент: мягкое свечение за заголовком */
   body::before{
     content:"";position:fixed;inset:0 0 auto 0;height:260px;pointer-events:none;z-index:-1;
     background:radial-gradient(120% 100% at 0% 0%,color-mix(in srgb,var(--acc) 20%,transparent),transparent 65%);
@@ -36,12 +35,10 @@
   :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
   .hide{display:none!important}
 
-  /* шапка */
   .head{padding:22px 2px 14px}
   .head h1{margin:0;font-size:30px;line-height:1.1;font-weight:750;letter-spacing:-.02em}
   .head p{margin:6px 0 0;color:var(--mut);font-size:14px}
 
-  /* липкая панель поиска */
   .bar{position:sticky;top:0;z-index:5;margin:0 -16px;padding:8px 16px 6px;background:linear-gradient(var(--bg) 80%,transparent)}
   .srch{display:flex;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:0 14px;height:52px;transition:border-color .15s,box-shadow .15s}
   .srch:focus-within{border-color:var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 18%,transparent)}
@@ -53,7 +50,6 @@
   .chip{flex:0 0 auto;background:var(--s1);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13.5px;font-weight:500;color:var(--mut);cursor:pointer;transition:background .15s,color .15s}
   .chip.on{background:var(--fg);color:var(--bg);border-color:transparent}
 
-  /* подсказка по введённым данным */
   .sg{display:flex;align-items:center;gap:12px;width:100%;margin-top:12px;padding:12px 14px;text-align:left;cursor:pointer;
       background:color-mix(in srgb,var(--acc) 14%,var(--s1));border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);border-radius:16px}
   .sg b{display:block;font-size:14.5px;font-weight:650}
@@ -62,7 +58,6 @@
 
   .note{font-size:13px;color:var(--mut);margin:14px 4px 0}
 
-  /* списки инструментов */
   .gh{font-size:13.5px;font-weight:600;color:var(--mut);margin:22px 4px 8px}
   .grp{background:var(--s1);border:1px solid var(--line);border-radius:18px;overflow:hidden}
   .item{display:flex;align-items:center;gap:13px;width:100%;padding:12px 14px;background:none;border:0;border-bottom:1px solid var(--line);text-align:left;cursor:pointer}
@@ -77,7 +72,6 @@
   .chev{width:16px;height:16px;flex:0 0 16px;color:var(--mut);opacity:.6}
   .empty{text-align:center;color:var(--mut);padding:40px 0;font-size:14px}
 
-  /* экран инструмента */
   #tool{animation:in .18s ease-out}
   @keyframes in{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
   .back{display:inline-flex;align-items:center;gap:4px;background:none;border:0;color:var(--acc);font-size:15px;font-weight:500;padding:14px 0 6px;cursor:pointer}
@@ -141,7 +135,6 @@
   .info{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 18px;font-size:13.5px;line-height:1.5;color:var(--mut)}
   .info b{color:var(--fg);font-weight:600}
 
-  /* кошелёк запросов */
   .wallet{display:flex;align-items:center;gap:12px;width:100%;margin:14px 0 0;padding:12px 14px;text-align:left;background:var(--s1);border:1px solid var(--line);border-radius:16px;cursor:pointer}
   .wallet .ico{--h:#f2c14e}
   .wallet .wt{flex:1;min-width:0}
@@ -149,7 +142,6 @@
   .wallet .wt span{display:block;font-size:12.5px;color:var(--mut)}
   .wb{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:var(--s2);font-size:13.5px;font-weight:600}
   .wb.hot{background:var(--acc);color:var(--acc-fg)}
-  /* карточки визуализаторов */
   .vz{display:flex;gap:13px;align-items:flex-start;width:100%;margin-top:10px;padding:14px;text-align:left;cursor:pointer;border-radius:18px;position:relative;
       border:1px solid var(--line);border:1px solid color-mix(in srgb,var(--h) 35%,var(--line));
       background:var(--s1);background:linear-gradient(135deg,color-mix(in srgb,var(--h) 16%,var(--s1)),var(--s1) 65%);transition:transform .12s}
@@ -159,7 +151,6 @@
   .pill svg{width:13px;height:13px}
   .pill.gold{background:color-mix(in srgb,var(--gold) 22%,transparent);color:var(--gold)}
   .pill.ok{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}
-  /* нижняя шторка */
   #shade{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;background:rgba(0,0,0,.55);animation:fade .2s}
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .sheet{width:100%;max-height:88vh;overflow:auto;background:var(--bg);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;padding:22px 18px calc(24px + env(safe-area-inset-bottom));animation:up .3s cubic-bezier(.2,.7,.2,1)}
@@ -175,7 +166,6 @@
   .bal b{font-size:18px}
   .bal span{font-size:12.5px;color:var(--mut);text-align:right}
   .cost{margin-top:8px;font-weight:600;color:var(--fg)}
-  /* визуализатор на весь экран */
   #viz{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
   .vb{display:flex;align-items:center;gap:8px;padding:2px 12px;border-bottom:1px solid var(--line);flex:0 0 auto;min-height:46px}
   .vb .back{padding:10px 6px}
@@ -251,6 +241,7 @@ const I = {
   geo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
   code:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></svg>',
   util:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 6.5a4 4 0 1 0 5 5L21 17v3h-3l-5.5-5.5a4 4 0 0 0-5-5z"/></svg>',
+  leak:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6"/><path d="M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6"/></svg>',
   star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.9l-5.4 2.8 1.1-6.1L3.2 9.4l6.1-.8z"/></svg>',
   bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>',
   lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>',
@@ -258,14 +249,13 @@ const I = {
   chev:'<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
   back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>'
 };
-const HUE = {tg:"#3aa8f0",nick:"#b78cf5",email:"#f2a65a",phone:"#5ccf8b",dom:"#3cc9d6",ip:"#f27a8c",geo:"#e8c24f",code:"#8ea2ff",util:"#9aa8b6"};
+const HUE = {tg:"#3aa8f0",nick:"#b78cf5",email:"#f2a65a",phone:"#5ccf8b",dom:"#3cc9d6",ip:"#f27a8c",geo:"#e8c24f",code:"#8ea2ff",util:"#9aa8b6",leak:"#e86a9c"};
 
 /* ---------- данные ---------- */
 const PLAT=[["GitHub","https://github.com/{u}"],["GitLab","https://gitlab.com/{u}"],["Reddit","https://www.reddit.com/user/{u}"],["X","https://x.com/{u}"],["Instagram","https://instagram.com/{u}"],["TikTok","https://tiktok.com/@{u}"],["VK","https://vk.com/{u}"],["OK","https://ok.ru/{u}"],["Facebook","https://facebook.com/{u}"],["LinkedIn","https://linkedin.com/in/{u}"],["Pinterest","https://pinterest.com/{u}"],["Telegram","https://t.me/{u}"],["YouTube","https://youtube.com/@{u}"],["Twitch","https://twitch.tv/{u}"],["Steam","https://steamcommunity.com/id/{u}"],["SoundCloud","https://soundcloud.com/{u}"],["Medium","https://medium.com/@{u}"],["Dev.to","https://dev.to/{u}"],["Habr","https://habr.com/ru/users/{u}/"],["Behance","https://behance.net/{u}"],["Dribbble","https://dribbble.com/{u}"],["Keybase","https://keybase.io/{u}"],["Kaggle","https://kaggle.com/{u}"],["HackerNews","https://news.ycombinator.com/user?id={u}"],["npm","https://npmjs.com/~{u}"],["Docker Hub","https://hub.docker.com/u/{u}"],["Patreon","https://patreon.com/{u}"],["Strava","https://strava.com/athletes/{u}"],["Bitbucket","https://bitbucket.org/{u}"],["Mastodon","https://mstdn.social/@{u}"]];
 const CC=[["7","Россия / Казахстан"],["1","США / Канада"],["44","Великобритания"],["49","Германия"],["33","Франция"],["39","Италия"],["34","Испания"],["48","Польша"],["380","Украина"],["375","Беларусь"],["995","Грузия"],["374","Армения"],["994","Азербайджан"],["998","Узбекистан"],["90","Турция"],["971","ОАЭ"],["972","Израиль"],["86","Китай"],["81","Япония"],["91","Индия"],["55","Бразилия"],["31","Нидерланды"],["46","Швеция"],["41","Швейцария"],["420","Чехия"],["40","Румыния"],["370","Литва"],["371","Латвия"],["372","Эстония"]];
 
 /* ---------- хеши ---------- */
-/* MD5: в старой версии были неверные сдвиги и длина сообщения, из-за этого MD5 и Gravatar считались неправильно */
 function md5(str){
   const S=[7,12,17,22,5,9,14,20,4,11,16,23,6,10,15,21];
   const K=Array.from({length:64},(_,i)=>Math.floor(Math.abs(Math.sin(i+1))*4294967296)|0);
@@ -593,6 +583,46 @@ const T=[
   ].filter(([,a])=>a.length);
   if(!sets.length)throw new Error("Ничего не нашёл. Нужен текст с адресами, номерами или ссылками");
   return sets.map(([t,a])=>`<h3>${t}: ${a.length}</h3><div class="pre">${esc(a.join("\n"))}</div>`+cpb(a.join("\n"))).join("");
+}},
+{c:"leak",n:"Пробив по базам",d:"Телефон, email, ФИО, ник, ИНН — сводка по утечкам",p:"+7 999 123-45-67 / mail@ya.ru / Иванов Иван",f:async v=>{
+  const raw=v.trim();if(!raw)throw new Error("Введи значение для поиска");
+  const r=await api("lookup",{value:raw});
+  if(!r.job)throw new Error("Не удалось создать задачу");
+  window.__job=r.job;
+  return `<div class="grp"><div class="row"><div class="k">Статус</div><div class="v" id="pvs">ищу… <span id="pvt">0</span> с</div></div></div><div id="pv"></div>`;
+},after:()=>{
+  const t0=Date.now();let n=0;
+  const tick=setInterval(async()=>{
+    const st=document.getElementById("pvs");
+    if(!st){ clearInterval(tick); return; }
+    if(++n>90){ clearInterval(tick); st.textContent="слишком долго"; return }
+    const s0=document.getElementById("pvt");
+    if(s0) s0.textContent=Math.round((Date.now()-t0)/1000);
+    let s;
+    try{ s=await api("job/"+window.__job); }catch(e){ return }
+    if(s.status==="running") return;
+    clearInterval(tick);
+    st.textContent=s.status==="done"?"готово":"ошибка";
+    const el=document.getElementById("pv");
+    if(s.status==="error"){ el.innerHTML=`<div class="err">${esc(s.err||"Ошибка источника")}</div>`; return }
+    let d;try{ d=JSON.parse(s.result) }catch(e){ el.innerHTML=`<div class="err">Некорректный ответ</div>`; return }
+    const stat=Object.entries(d.stats||{}).map(([k,x])=>k+": "+x).join(", ")||"—";
+    el.innerHTML = rows([
+      ["Субъект",esc(d.subject.value)],
+      ["Найдено",esc(stat)],
+      ["Источники",esc((d.providers||[]).join(", ")||"—")],
+      ["Списано",esc(String(d.charge||0))],
+      ["Ошибки",esc((d.errors||[]).join("; ")||"—")]
+    ])
+    +((d.records||[]).length?`<h3>Записи</h3><div class="grp">`+d.records.slice(0,100).map(x=>`<div class="row"><div class="k">${esc(x.kind)}</div><div class="v">${esc(x.value)}${x.source?`<br><span style="color:var(--mut)">${esc(x.source)}</span>`:""}</div></div>`).join("")+`</div>`:"")
+    +`<button class="b2" id="tg2">Открыть в «Следы»</button>`;
+    const own=eco&&eco.owned&&eco.owned.includes("sledy");
+    document.getElementById("tg2").onclick=()=>{
+      localStorage.setItem("sledy_import",JSON.stringify(d.board));
+      const vv=VIZ.find(x=>x.id===(own?"sledy":"lite"));
+      if(vv) openViz(vv);
+    };
+  },2000);
 }}
 ];
 
@@ -625,10 +655,11 @@ const DESC={
 "Timestamp":"Переводит Unix-время в дату и обратно: показывает секунды, формат ISO и локальное время.",
 "Генераторы":"Создаёт случайный UUID и надёжный пароль на 20 символов. Всё генерируется на устройстве.",
 "Google dorks":"Готовые поисковые запросы по сайту: документы PDF и XLSX, страницы входа, открытые каталоги, файлы .env. Используй для проверки своих сайтов и открытых данных.",
-"Извлечь данные из текста":"Вставляешь любой текст, переписку или лог, а инструмент находит и собирает отдельно email, IP-адреса, ссылки, телефоны, @ники, хеши и домены без повторов. Всё делается на устройстве."
+"Извлечь данные из текста":"Вставляешь любой текст, переписку или лог, а инструмент находит и собирает отдельно email, IP-адреса, ссылки, телефоны, @ники, хеши и домены без повторов. Всё делается на устройстве.",
+"Пробив по базам":"Отправляет телефон, email, ФИО, ник или ИНН в сервисы утечек (LeakCheck, Osintleak, Snusbase, HIBP, DeHashed) и собирает сводку: сколько записей нашлось, в каких базах и какие поля. Стоит запросов по числу подключённых источников, кэш на неделю дешевле. Кнопка «Открыть в Следы» переносит результат на доску карточками и связями."
 };
 
-const CATS=[["all","Все"],["tg","Телеграм"],["nick","Никнеймы"],["email","Email"],["phone","Телефон"],["dom","Домен"],["ip","IP"],["geo","Гео"],["code","Кодирование"],["util","Утилиты"]];
+const CATS=[["all","Все"],["leak","Пробив"],["tg","Телеграм"],["nick","Никнеймы"],["email","Email"],["phone","Телефон"],["dom","Домен"],["ip","IP"],["geo","Гео"],["code","Кодирование"],["util","Утилиты"]];
 const CATNAME=Object.fromEntries(CATS);
 const byName = n => T.findIndex(t=>t.n===n);
 
@@ -678,7 +709,7 @@ function drawList(animate){
   if(animate) g.querySelectorAll(".item,.gh").forEach((el,k)=>el.style.setProperty("--n",Math.min(k,16)));
 }
 
-/* ---------- экран инструмента (функции переименованы, чтобы не затирать window.open и window.close) ---------- */
+/* ---------- экран инструмента ---------- */
 function openTool(i, preset){
   const t=T[i]; if(!t) return;
   $("#list").classList.add("hide"); $("#tool").classList.remove("hide");
@@ -740,7 +771,6 @@ function closeTool(){
 }
 
 /* ---------- Магазин: запросы и визуализаторы ---------- */
-/* Запрос тратится только там, где инструмент ходит во внешние сервисы. Локальные и «ссылочные» инструменты бесплатны. */
 const FREE_TOOLS=new Set(["Профиль Телеграм","Поиск каналов","Скан по платформам","Вариации никнейма","Транслит ника","Разбор заголовков письма","Инфо по номеру","Разбор ссылки","CIDR-калькулятор","Base64","Разбор JWT","Хеши текста","Определить тип хеша","Кодировки текста","Шифр Цезаря и ROT13","Timestamp","Генераторы","Google dorks","Извлечь данные из текста"]);
 const costOf=t=>FREE_TOOLS.has(t.n)?0:1;
 const pl=(n,a)=>{const m=n%10,h=n%100;return n+" "+(m===1&&h!==11?a[0]:(m>=2&&m<=4&&(h<12||h>14))?a[1]:a[2])};
@@ -755,7 +785,7 @@ const VIZ=[
    desc:"Та же доска, но до 4 карточек и 3D только для просмотра. Чтобы попробовать, прежде чем покупать."}
 ];
 
-let eco=null, ecoState="loading"; /* loading → ok (магазин работает) | locked (открыто вне Телеграма) | off (бэкенд не подключён) */
+let eco=null, ecoState="loading";
 let sheetOpen=false, vizOpen=false, vizUrl=null, toastT=0;
 
 async function api(path,body,raw){
@@ -767,7 +797,7 @@ async function api(path,body,raw){
   }
   let j=null;
   if((r.headers.get("content-type")||"").includes("json")){ try{ j=await r.json() }catch(e){} }
-  if(!j){ const e=new Error("no-api"); e.status=0; throw e; } /* вместо ответа пришла обычная страница: бэкенд не подключён */
+  if(!j){ const e=new Error("no-api"); e.status=0; throw e; }
   if(!r.ok){ const e=new Error(j.error||("HTTP "+r.status)); e.status=r.status; throw e; }
   return j;
 }
@@ -795,7 +825,6 @@ function renderViz(){
 }
 function renderEco(){ renderWallet(); renderViz(); }
 
-/* шторка снизу */
 function openSheet(html){ const s=$("#shade"); s.innerHTML=`<div class="sheet" role="dialog">${html}</div>`; s.classList.remove("hide"); sheetOpen=true; tg?.BackButton?.show(); }
 function closeSheet(){ $("#shade").classList.add("hide"); $("#shade").innerHTML=""; sheetOpen=false; if($("#tool").classList.contains("hide")&&!vizOpen) tg?.BackButton?.hide(); }
 function buySheet(v){
@@ -849,7 +878,7 @@ async function purchase(item){
   else tg.openTelegramLink(link);
 }
 
-/* визуализатор на весь экран: HTML приходит строкой и запускается во фрейме, без прямой ссылки на файл */
+/* визуализатор на весь экран */
 async function openViz(v){
   hap();
   if(!v.free){
@@ -860,7 +889,13 @@ async function openViz(v){
   try{
     const r=v.free?await fetch(v.src):await api("viz",{id:v.item},true);
     if(!r.ok) throw new Error("load");
-    mountViz(await r.text());
+    let html=await r.text();
+    const imp=localStorage.getItem("sledy_import");
+    if(imp){
+      localStorage.removeItem("sledy_import");
+      html=html.replace("</body>",`<script>setTimeout(()=>window.__importBoard&&window.__importBoard(${imp}),600)<\/script></body>`);
+    }
+    mountViz(html);
   }catch(e){ closeViz(); toast(e.status===404?"Файл визуализатора ещё не загружен на сервер":"Не удалось открыть"); }
 }
 function showVizShell(v){
