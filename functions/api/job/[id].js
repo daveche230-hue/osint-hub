@@ -6,7 +6,7 @@ const json = (d, s = 200) =>
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 
-export async function onRequestGet({ request, env, params }) {
+async function handle({ request, env, params }) {
   const me = await auth(request, env);
   if (!me) return json({ error: "auth" }, 401);
 
@@ -18,3 +18,6 @@ export async function onRequestGet({ request, env, params }) {
 
   return json({ status: row.status, result: row.status === "done" ? row.result : null, err: row.err });
 }
+
+export const onRequestGet = handle;
+export const onRequestPost = handle;
