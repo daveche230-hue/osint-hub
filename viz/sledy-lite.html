@@ -3582,4 +3582,14 @@ document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&!e.sh
 })();
 })();
 </script>
+    window.__importBoard = (b) => {
+  try {
+    if (typeof S !== "undefined" && typeof draw === "function") {
+      S = b;
+      draw();
+    }
+  } catch (e) {
+    console.warn("import failed", e);
+  }
+};
 </body></html>
