@@ -176,6 +176,8 @@
   .vload{position:absolute;inset:0;display:grid;place-items:center;color:var(--mut);font-size:14px}
   #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;z-index:80;background:var(--fg);color:var(--bg);padding:11px 16px;border-radius:12px;font-size:14px;max-width:86vw;text-align:center;pointer-events:none;transition:opacity .2s,transform .2s}
   #toast.on{opacity:1;transform:translate(-50%,0)}
+  .adm{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .adm .b2{margin:0}
 
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -188,6 +190,7 @@
     <p>Проверки по открытым источникам</p>
   </div>
   <div id="wlt"></div>
+  <div id="adw"></div>
   <div id="vzw"></div>
   <div class="bar">
     <div class="srch">
@@ -219,7 +222,6 @@ const store = {
 let favs = store.get("osint_fav",[]);
 let hist = store.get("osint_hist",[]);
 
-/* ---------- тема ---------- */
 function applyTheme(){
   const dark = tg ? tg.colorScheme !== "light" : !matchMedia("(prefers-color-scheme: light)").matches;
   document.documentElement.dataset.theme = dark ? "dark" : "light";
@@ -230,7 +232,6 @@ if (tg) { tg.ready(); tg.expand(); tg.onEvent?.("themeChanged", applyTheme); }
 matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => { if(!tg) applyTheme(); });
 applyTheme();
 
-/* ---------- иконки и цвета категорий ---------- */
 const I = {
   tg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M21 4 3 11l5 2 2 6 3-4 5 3z"/></svg>',
   nick:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>',
@@ -241,7 +242,7 @@ const I = {
   geo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
   code:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></svg>',
   util:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 6.5a4 4 0 1 0 5 5L21 17v3h-3l-5.5-5.5a4 4 0 0 0-5-5z"/></svg>',
-  leak:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6"/><path d="M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6"/></svg>',
+  doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>',
   star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.9l-5.4 2.8 1.1-6.1L3.2 9.4l6.1-.8z"/></svg>',
   bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>',
   lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>',
@@ -249,13 +250,11 @@ const I = {
   chev:'<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
   back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>'
 };
-const HUE = {tg:"#3aa8f0",nick:"#b78cf5",email:"#f2a65a",phone:"#5ccf8b",dom:"#3cc9d6",ip:"#f27a8c",geo:"#e8c24f",code:"#8ea2ff",util:"#9aa8b6",leak:"#e86a9c"};
+const HUE = {tg:"#3aa8f0",nick:"#b78cf5",email:"#f2a65a",phone:"#5ccf8b",dom:"#3cc9d6",ip:"#f27a8c",geo:"#e8c24f",code:"#8ea2ff",util:"#9aa8b6",doc:"#c8b27a"};
 
-/* ---------- данные ---------- */
 const PLAT=[["GitHub","https://github.com/{u}"],["GitLab","https://gitlab.com/{u}"],["Reddit","https://www.reddit.com/user/{u}"],["X","https://x.com/{u}"],["Instagram","https://instagram.com/{u}"],["TikTok","https://tiktok.com/@{u}"],["VK","https://vk.com/{u}"],["OK","https://ok.ru/{u}"],["Facebook","https://facebook.com/{u}"],["LinkedIn","https://linkedin.com/in/{u}"],["Pinterest","https://pinterest.com/{u}"],["Telegram","https://t.me/{u}"],["YouTube","https://youtube.com/@{u}"],["Twitch","https://twitch.tv/{u}"],["Steam","https://steamcommunity.com/id/{u}"],["SoundCloud","https://soundcloud.com/{u}"],["Medium","https://medium.com/@{u}"],["Dev.to","https://dev.to/{u}"],["Habr","https://habr.com/ru/users/{u}/"],["Behance","https://behance.net/{u}"],["Dribbble","https://dribbble.com/{u}"],["Keybase","https://keybase.io/{u}"],["Kaggle","https://kaggle.com/{u}"],["HackerNews","https://news.ycombinator.com/user?id={u}"],["npm","https://npmjs.com/~{u}"],["Docker Hub","https://hub.docker.com/u/{u}"],["Patreon","https://patreon.com/{u}"],["Strava","https://strava.com/athletes/{u}"],["Bitbucket","https://bitbucket.org/{u}"],["Mastodon","https://mstdn.social/@{u}"]];
 const CC=[["7","Россия / Казахстан"],["1","США / Канада"],["44","Великобритания"],["49","Германия"],["33","Франция"],["39","Италия"],["34","Испания"],["48","Польша"],["380","Украина"],["375","Беларусь"],["995","Грузия"],["374","Армения"],["994","Азербайджан"],["998","Узбекистан"],["90","Турция"],["971","ОАЭ"],["972","Израиль"],["86","Китай"],["81","Япония"],["91","Индия"],["55","Бразилия"],["31","Нидерланды"],["46","Швеция"],["41","Швейцария"],["420","Чехия"],["40","Румыния"],["370","Литва"],["371","Латвия"],["372","Эстония"]];
 
-/* ---------- хеши ---------- */
 function md5(str){
   const S=[7,12,17,22,5,9,14,20,4,11,16,23,6,10,15,21];
   const K=Array.from({length:64},(_,i)=>Math.floor(Math.abs(Math.sin(i+1))*4294967296)|0);
@@ -290,12 +289,55 @@ function md5(str){
 async function sha(a,t){const d=await crypto.subtle.digest(a,new TextEncoder().encode(t));return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,"0")).join("")}
 async function doh(n,t){const r=await fetch("https://dns.google/resolve?name="+encodeURIComponent(n)+"&type="+t);if(!r.ok)throw new Error("DNS "+r.status);return r.json()}
 
-/* ---------- блоки вывода ---------- */
 const rows = p => '<div class="grp">'+p.map(([k,v,c])=>`<div class="row"><div class="k">${esc(k)}</div><div class="v ${c||""}">${v}</div></div>`).join("")+'</div>';
 const links = l => '<div class="grp ll">'+l.map(([n,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}<span>открыть</span></a>`).join("")+'</div>';
 const cpb = t => `<button class="b2" data-copy="${esc(t)}">Скопировать</button>`;
+const rnd = n => Array.from(crypto.getRandomValues(new Uint32Array(n))).map(x=>x%10).join("");
+const innC=(d,w)=>d.reduce((a,x,i)=>a+x*w[i],0)%11%10;
 
-/* ---------- инструменты ---------- */
+/* ---------- валидаторы документов ---------- */
+const innOk = s => {
+  if(!/^\d{10}$/.test(s) && !/^\d{12}$/.test(s)) return false;
+  const d=[...s].map(Number);
+  const w10=[2,4,10,3,5,9,4,6,8];
+  const c1=innC(d.slice(0,9),w10);
+  if(s.length===10) return c1===d[9];
+  const c11=innC(d.slice(0,10),[7,2,4,10,3,5,9,4,6,8]);
+  const c12=innC(d.slice(0,11),[3,7,2,4,10,3,5,9,4,6,8]);
+  return c11===d[10] && c12===d[11];
+};
+const ogrnOk = s => {
+  if(!/^\d{13}$/.test(s) && !/^\d{15}$/.test(s)) return false;
+  const m = s.length===13 ? 11n : 13n;
+  return (BigInt(s.slice(0,-1)) % m) % 10n === BigInt(s[s.length-1]);
+};
+const snilsOk = s => {
+  if(!/^\d{11}$/.test(s)) return false;
+  const d=[...s].map(Number);
+  let sum=0; for(let i=0;i<9;i++) sum+=d[i]*(9-i);
+  let c = sum<100 ? sum : (sum===100||sum===101 ? 0 : sum%101);
+  if(c===100||c===101) c=0;
+  return c === d[9]*10+d[10];
+};
+const luhnOk = s => {
+  if(!/^\d{12,19}$/.test(s)) return false;
+  let sum=0, alt=false;
+  for(let i=s.length-1;i>=0;i--){ let n=+s[i]; if(alt){ n*=2; if(n>9) n-=9 } sum+=n; alt=!alt }
+  return sum%10===0;
+};
+const VW=[8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2];
+const VM={A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,J:1,K:2,L:3,M:4,N:5,P:7,R:9,S:2,T:3,U:4,V:5,W:6,X:7,Y:8,Z:9};
+const vinOk = s => {
+  if(!/^[A-HJ-NPR-Z0-9]{17}$/i.test(s)) return false;
+  const u=s.toUpperCase();
+  let sum=0; for(let i=0;i<17;i++){ const c=u[i]; sum += (/\d/.test(c) ? +c : VM[c]) * VW[i] }
+  const r=sum%11;
+  return (r===10?"X":String(r)) === u[8];
+};
+const kppOk = s => /^\d{4}[0-9A-Z]{2}\d{3}$/.test(s);
+
+const luhnAdd = s => { for(let k=0;k<10;k++){ const t=s+k; if(luhnOk(t)) return t } return s+"0" };
+
 const T=[
 {c:"tg",n:"Профиль Телеграм",d:"Ссылки и каталоги по юзернейму",p:"username без @",f:async v=>{
   const u=norm(v);if(!u)throw new Error("Введи юзернейм");
@@ -321,7 +363,37 @@ const T=[
   const o=new Set([u,u.replace(/[._-]/g,""),u+"1",u+"_",u+"99","real"+u,u+"official","the"+u,u.replace(/o/g,"0").replace(/i/g,"1"),u+"_dev",u+"_ru"]);["x","dev","pro","me"].forEach(s=>o.add(u+"_"+s));
   const r=[...o].join("\n");return `<div class="pre">${esc(r)}</div>`+cpb(r);
 }},
-{c:"email",n:"Проверка email",d:"Домен, почтовый сервер, SPF, DMARC, Gravatar",p:"name@example.com",f:async v=>{
+{c:"nick",n:"Транслит ника",d:"Русское имя латиницей в разных вариантах",p:"Иван Петров",f:async v=>{
+  if(!v.trim())throw new Error("Введи имя или слово");
+  const M={а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"e",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",м:"m",н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"kh",ц:"ts",ч:"ch",ш:"sh",щ:"shch",ъ:"",ы:"y",ь:"",э:"e",ю:"yu",я:"ya"};
+  const A={...M,х:"h",ц:"c",й:"j",ы:"i",ю:"u",ж:"j",щ:"sch",ё:"yo"};
+  const tr=(t,m)=>[...t.toLowerCase()].map(c=>m[c]!==undefined?m[c]:c).join("");
+  const a=tr(v.trim(),M),b=tr(v.trim(),A);
+  const parts=a.split(/\s+/).filter(Boolean);
+  const set=new Set([a.replace(/\s+/g,""),a.replace(/\s+/g,"_"),a.replace(/\s+/g,"."),b.replace(/\s+/g,""),b.replace(/\s+/g,"_")]);
+  if(parts.length>1){set.add(parts[0][0]+parts[1]);set.add(parts[0]+parts[1][0]);set.add(parts[1]+parts[0]);set.add(parts[1]+"_"+parts[0])}
+  const r=[...set].join("\n");
+  return `<h3>Варианты написания</h3><div class="pre">${esc(r)}</div>`+cpb(r);
+}},
+{c:"nick",n:"GitHub-профиль",d:"Данные аккаунта, репозитории, почты из коммитов",p:"username",f:async v=>{
+  const u=norm(v);if(!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(u))throw new Error("Нужен корректный GitHub-ник");
+  const r=await fetch("https://api.github.com/users/"+encodeURIComponent(u));
+  if(r.status===404)throw new Error("Такого аккаунта нет");
+  if(r.status===403)throw new Error("Лимит GitHub API исчерпан (60 запросов в час). Попробуй позже");
+  if(!r.ok)throw new Error("GitHub вернул ошибку "+r.status);
+  const j=await r.json();
+  const dt=x=>x?new Date(x).toLocaleDateString("ru-RU"):"—";
+  let mails=[],repos=[];
+  try{const ev=await (await fetch("https://api.github.com/users/"+encodeURIComponent(u)+"/events/public?per_page=100")).json();
+    const set=new Set();(Array.isArray(ev)?ev:[]).forEach(e=>((e.payload&&e.payload.commits)||[]).forEach(c=>{if(c.author&&c.author.email)set.add(c.author.email)}));mails=[...set]}catch(e){}
+  try{const rp=await (await fetch("https://api.github.com/users/"+encodeURIComponent(u)+"/repos?sort=pushed&per_page=5")).json();repos=Array.isArray(rp)?rp:[]}catch(e){}
+  return `<h3>Профиль</h3>`+rows([["ник",esc(j.login)],["имя",esc(j.name||"—")],["о себе",esc(j.bio||"—")],["компания",esc(j.company||"—")],["место",esc(j.location||"—")],["сайт",esc(j.blog||"—")],["почта в профиле",esc(j.email||"—")],["X (Twitter)",esc(j.twitter_username||"—")]])
+  +`<h3>Активность</h3>`+rows([["создан",dt(j.created_at)],["обновлён",dt(j.updated_at)],["репозиториев",String(j.public_repos)],["gist",String(j.public_gists)],["подписчиков",String(j.followers)],["подписок",String(j.following)]])
+  +(mails.length?`<h3>Почты из последних коммитов</h3><div class="pre">${esc(mails.join("\n"))}</div>`:"")
+  +(repos.length?`<h3>Свежие репозитории</h3>`+links(repos.map(x=>[x.name+(x.language?" · "+x.language:""),x.html_url])):"")
+  +`<h3>Дальше</h3>`+links([["Профиль","https://github.com/"+u],["Аватар",j.avatar_url],["SSH-ключи","https://github.com/"+u+".keys"],["GPG-ключи","https://github.com/"+u+".gpg"]]);
+}},
+{c:"email",n:"Проверка email",d:"Домен, MX, SPF, DMARC, Gravatar, одноразовость",p:"name@example.com",f:async v=>{
   const e=v.trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e))throw new Error("Это не похоже на email. Пример: name@example.com");
   const [l,d]=e.split("@");
   const FREE={"gmail.com":"Google","googlemail.com":"Google","outlook.com":"Microsoft","hotmail.com":"Microsoft","live.com":"Microsoft","yahoo.com":"Yahoo","icloud.com":"Apple","me.com":"Apple","proton.me":"Proton","protonmail.com":"Proton","yandex.ru":"Яндекс","yandex.com":"Яндекс","ya.ru":"Яндекс","mail.ru":"Mail.ru","bk.ru":"Mail.ru","inbox.ru":"Mail.ru","list.ru":"Mail.ru","rambler.ru":"Rambler","ukr.net":"Ukr.net","tutanota.com":"Tuta","gmx.com":"GMX","aol.com":"AOL"};
@@ -339,6 +411,20 @@ const T=[
   +`<h3>Хеши адреса</h3>`+rows([["MD5",esc(h)],["SHA-256",esc(h2)]])
   +`<h3>Gravatar</h3><img class="thumb" alt="" src="https://www.gravatar.com/avatar/${h}?d=404&s=160" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'pre',textContent:'Аватар не найден'}))">`
   +`<h3>Дальше</h3>`+links([["Профиль Gravatar","https://gravatar.com/"+h],["Have I Been Pwned","https://haveibeenpwned.com/account/"+encodeURIComponent(e)],["Google: адрес целиком",'https://www.google.com/search?q=%22'+encodeURIComponent(e)+'%22'],["Google: часть до @",'https://www.google.com/search?q=%22'+encodeURIComponent(l)+'%22']]);
+}},
+{c:"email",n:"Разбор заголовков письма",d:"Путь письма, IP отправителя, SPF, DKIM, DMARC",p:"Вставь заголовки: строки From:, Received:, Subject:",ta:true,f:async v=>{
+  if(!/^\s*[\w-]+:/m.test(v))throw new Error("Вставь заголовки письма: строки вида From:, Received:, Subject:");
+  const un=v.replace(/\r?\n[ \t]+/g," ");
+  const hd=n=>{const r=un.match(new RegExp("^"+n+":\\s*(.*)$","im"));return r?r[1].trim():"—"};
+  const recv=[...un.matchAll(/^Received:\s*(.*)$/gim)].map(x=>x[1]).reverse();
+  const hops=recv.map((r,i)=>{const ips=[...new Set((r.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g)||[]).filter(x=>!/^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(x)))];const from=(r.match(/from\s+([^\s(]+)/i)||[])[1]||"—";return [(i+1)+". "+from,esc(ips.join("\n")||"—")]});
+  const auth=hd("Authentication-Results");
+  const res=k=>{const r=auth.match(new RegExp(k+"=(\\w+)","i"));return r?r[1].toLowerCase():"—"};
+  const c=x=>x==="pass"?"ok":(x==="—"?"":"er");
+  const mailer=hd("X-Mailer")!=="—"?hd("X-Mailer"):hd("User-Agent");
+  return `<h3>Основное</h3>`+rows([["От",esc(hd("From"))],["Кому",esc(hd("To"))],["Тема",esc(hd("Subject"))],["Дата",esc(hd("Date"))],["Return-Path",esc(hd("Return-Path"))],["Reply-To",esc(hd("Reply-To"))],["Message-ID",esc(hd("Message-ID"))],["Программа",esc(mailer)]])
+  +`<h3>Проверки подлинности</h3>`+rows([["SPF",esc(res("spf")),c(res("spf"))],["DKIM",esc(res("dkim")),c(res("dkim"))],["DMARC",esc(res("dmarc")),c(res("dmarc"))]])
+  +(hops.length?`<h3>Путь письма: от отправителя к тебе</h3>`+rows(hops):"");
 }},
 {c:"phone",n:"Инфо по номеру",d:"Страна, формат, варианты записи, мессенджеры",p:"+7 999 123-45-67",f:async v=>{
   const d=v.replace(/[^\d]/g,"");if(!d)throw new Error("Введи номер");
@@ -367,13 +453,6 @@ const T=[
     +`<div class="row"><div class="k">DNSSEC</div><div class="v ${ad?'ok':''}">${ad?'проверен':'нет'}</div></div>`;
   return `<h3>${esc(d)}</h3><div class="grp">${body}</div>`;
 }},
-{c:"dom",n:"Почтовая гигиена",d:"SPF и DMARC домена",p:"example.com",f:async v=>{
-  const d=v.trim().replace(/^https?:\/\//,"").split("/")[0];if(!d.includes("."))throw new Error("Нужен домен. Пример: example.com");
-  const g=async(n,t)=>{try{const j=await doh(n,t);return (j.Answer||[]).map(r=>r.data).join(" | ")}catch(e){return ""}};
-  const [spf,dm]=await Promise.all([g(d,"TXT"),g("_dmarc."+d,"TXT")]);
-  const hasS=/v=spf1/.test(spf);
-  return rows([["SPF",hasS?"есть":"нет",hasS?"ok":"er"],["DMARC",dm?"есть":"нет",dm?"ok":"er"],["политика DMARC",(dm.match(/p=(none|quarantine|reject)/)||[,"нет"])[1]]]);
-}},
 {c:"dom",n:"WHOIS домена",d:"Регистратор, даты, статус (RDAP)",p:"example.com",f:async v=>{
   const d=v.trim().replace(/^https?:\/\//,"").split("/")[0].toLowerCase();if(!d.includes("."))throw new Error("Нужен домен. Пример: example.com");
   const r=await fetch("https://rdap.org/domain/"+encodeURIComponent(d));
@@ -386,12 +465,69 @@ const T=[
   return rows([["домен",esc(j.ldhName||d)],["регистратор",esc(fn||"—")],["создан",esc(ev("registration"))],["изменён",esc(ev("last changed"))],["истекает",esc(ev("expiration"))],["статус",esc((j.status||[]).join("\n")||"—")],["NS",esc((j.nameservers||[]).map(n=>String(n.ldhName).toLowerCase()).join("\n")||"—")]])
   +`<h3>Дальше</h3>`+links([["Полный ответ RDAP","https://rdap.org/domain/"+encodeURIComponent(d)],["DomainTools","https://whois.domaintools.com/"+encodeURIComponent(d)]]);
 }},
-{c:"dom",n:"Архив и история",d:"Wayback, поддомены, кеш",p:"example.com/page",f:async v=>{
-  const u=v.trim();if(!u)throw new Error("Введи адрес сайта");
-  const full=u.startsWith("http")?u:"https://"+u;const host=full.replace(/^https?:\/\//,"").split("/")[0];
-  let a="—";try{const r=await fetch("https://archive.org/wayback/available?url="+encodeURIComponent(full));const j=await r.json();a=(j.archived_snapshots&&j.archived_snapshots.closest)?j.archived_snapshots.closest.url:"снимков нет"}catch(e){a="не удалось проверить"}
-  return rows([["снимок",a.includes("http")?`<a href="${esc(a)}" target="_blank" rel="noopener" style="color:var(--acc)">открыть</a>`:esc(a)]])
-  +`<h3>Ещё</h3>`+links([["Все снимки","https://web.archive.org/web/*/"+full],["Поддомены (crt.sh)","https://crt.sh/?q=%25."+host],["Google site:","https://www.google.com/search?q=site%3A"+host]]);
+{c:"dom",n:"Архив и история",d:"Копии в Wayback: первая, последняя, все",p:"example.com/page",f:async v=>{
+  const u=v.trim().replace(/^https?:\/\//,"").replace(/\/$/,"");if(!u.includes("."))throw new Error("Введи адрес сайта");
+  const host=u.split("/")[0];
+  const q=l=>fetch("https://web.archive.org/cdx/search/cdx?url="+encodeURIComponent(u)+"&output=json&fl=timestamp,original,statuscode&limit="+l).then(r=>{if(!r.ok)throw 0;return r.json()});
+  let f,l;try{[f,l]=await Promise.all([q(1),q(-1)])}catch(e){f=null}
+  let first="—",last="—",l1="",l2="";
+  if(f&&f.length>1){const fmt=t=>t.slice(0,4)+"-"+t.slice(4,6)+"-"+t.slice(6,8);first=fmt(f[1][0])+" (код "+f[1][2]+")";last=fmt(l[1][0])+" (код "+l[1][2]+")";l1="https://web.archive.org/web/"+f[1][0]+"/"+f[1][1];l2="https://web.archive.org/web/"+l[1][0]+"/"+l[1][1]}
+  return rows([["первая копия",esc(first)],["последняя копия",esc(last)]])
+  +`<h3>Открыть</h3>`+links([...(l1?[["Первая копия",l1],["Последняя копия",l2]]:[]),["Календарь копий","https://web.archive.org/web/*/"+u],["Поддомены (crt.sh)","https://crt.sh/?q=%25."+host],["Google site:","https://www.google.com/search?q=site%3A"+host]]);
+}},
+{c:"dom",n:"Поддомены",d:"Из журналов сертификатов (crt.sh)",p:"example.com",f:async v=>{
+  const d=v.trim().replace(/^https?:\/\//,"").split("/")[0].toLowerCase();if(!d.includes("."))throw new Error("Нужен домен. Пример: example.com");
+  let j;
+  try{ const r=await fetch("https://crt.sh/?q=%25."+encodeURIComponent(d)+"&output=json",{signal:AbortSignal.timeout(20000)}); if(!r.ok) throw 0; j=await r.json() }
+  catch(e){ return `<div class="err">crt.sh не ответил. Открой вручную:</div>`+links([["crt.sh",'https://crt.sh/?q=%25.'+encodeURIComponent(d)]]); }
+  const set=new Set();
+  (j||[]).forEach(x=>String(x.name_value||"").split("\n").forEach(n=>{ n=n.trim().toLowerCase().replace(/^\*\./,""); if(n&&n.endsWith(d)&&n!==d) set.add(n) }));
+  const list=[...set].sort();
+  if(!list.length) return `<div class="note">Поддоменов в журналах нет.</div>`+links([["crt.sh",'https://crt.sh/?q=%25.'+encodeURIComponent(d)]]);
+  const t=list.join("\n");
+  return `<h3>Найдено: ${list.length}</h3><div class="pre">${esc(t)}</div>`+cpb(t)+links([["crt.sh",'https://crt.sh/?q=%25.'+encodeURIComponent(d)]]);
+}},
+{c:"dom",n:"Фишинг-домены",d:"Омоглифы, опечатки, подмена зоны",p:"example.com",f:async v=>{
+  const d=v.trim().toLowerCase().replace(/^https?:\/\//,"").split("/")[0];if(!d.includes("."))throw new Error("Нужен домен. Пример: example.com");
+  const [name,...zr]=d.split(".");const zone=zr.join(".");
+  const MAP={a:"а",e:"е",o:"о",p:"р",c:"с",x:"х",y:"у",i:"і",s:"ѕ",j:"ј",h:"һ"};
+  const hom=[...name].map(c=>MAP[c]||c).join(".");
+  let puny="—";try{puny=new URL("https://"+hom+"."+zone).hostname}catch(e){}
+  const t=new Set();
+  for(let i=0;i<name.length;i++){ t.add(name.slice(0,i)+name.slice(i+1)+"."+zone); t.add(name.slice(0,i)+name[i]+name[i]+name.slice(i+1)+"."+zone) }
+  for(let i=0;i<name.length-1;i++) t.add(name.slice(0,i)+name[i+1]+name[i]+name.slice(i+2)+"."+zone);
+  ["com","net","ru","org","co","info","site","online","xyz"].forEach(z=>{ if(z!==zone) t.add(name+"."+z) });
+  t.add(name+"-"+zone.replace(/\./g,"")+"."+zone);
+  t.add("www-"+name+"."+zone);
+  const list=[...t].filter(x=>x&&x!==d).slice(0,40);
+  const all=[d,hom,puny,...list].join("\n");
+  return rows([["исходный",esc(d)],["омоглиф (кириллица)",esc(hom)],["punycode",esc(puny)]])
+  +`<h3>Похожие написания</h3><div class="pre">${esc(list.join("\n"))}</div>`+cpb(all)
+  +`<h3>Проверить</h3>`+links([["RDAP по омоглифу","https://rdap.org/domain/"+puny],["Whois омоглифа","https://whois.domaintools.com/"+puny],["Скриншот-проверка","https://urlscan.io/liveshot/?url="+puny]]);
+}},
+{c:"dom",n:"Редиректы ссылки",d:"Куда ведёт адрес на самом деле",p:"https://bit.ly/xxxx",f:async v=>{
+  const s=v.trim();if(!s)throw new Error("Вставь ссылку");
+  const full=/^https?:\/\//i.test(s)?s:"https://"+s;
+  let j;
+  try{ const r=await fetch("https://api.allorigins.win/get?url="+encodeURIComponent(full),{signal:AbortSignal.timeout(20000)}); j=await r.json() }
+  catch(e){ throw new Error("Не удалось пройти по ссылке") }
+  const st=j.status||{};
+  const fin=st.url||full;
+  const moved=fin.replace(/\/$/,"")!==full.replace(/\/$/,"");
+  return rows([["запрос",esc(full)],["конечный адрес",esc(fin),moved?"er":"ok"],["код ответа",esc(String(st.http_code||"—"))],["тип",esc(st.content_type||"—")],["был переход",moved?"да":"нет",moved?"er":"ok"]])
+  +(moved?`<h3>Итог</h3><div class="pre">${esc(fin)}</div>`+cpb(fin):"")
+  +`<h3>Проверить</h3>`+links([["VirusTotal","https://www.virustotal.com/gui/url/"+btoa(fin).replace(/=+$/,"")],["urlscan","https://urlscan.io/liveshot/?url="+encodeURIComponent(fin)]]);
+}},
+{c:"dom",n:"Разбор ссылки",d:"Части адреса, параметры, ссылка без трекеров",p:"https://site.com/page?utm_source=x&id=5",f:async v=>{
+  let s=v.trim();if(!s)throw new Error("Вставь ссылку");if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(s))s="https://"+s;
+  let u;try{u=new URL(s)}catch(e){throw new Error("Это не похоже на ссылку")}
+  const TR=/^(utm_|fbclid|gclid|yclid|mc_|_ga|igshid|ref$|ref_|si$|mkt_)/i;
+  const clean=new URL(u.href);[...clean.searchParams.keys()].forEach(k=>{if(TR.test(k))clean.searchParams.delete(k)});
+  const pr=[...u.searchParams.entries()];
+  return `<h3>Части</h3>`+rows([["протокол",esc(u.protocol.replace(":",""))],["хост",esc(u.hostname)],["порт",esc(u.port||"по умолчанию")],["путь",esc(u.pathname)],["якорь",esc(u.hash||"—")],["логин в ссылке",esc(u.username||"—")]])
+  +(pr.length?`<h3>Параметры</h3><div class="grp">`+pr.map(([k,x])=>`<div class="row"><div class="k">${esc(k)}</div><div class="v ${TR.test(k)?"er":""}">${esc(x)}</div></div>`).join("")+`</div>`:"")
+  +`<h3>Без трекеров</h3><div class="pre">${esc(clean.href)}</div>`+cpb(clean.href)
+  +(/xn--/.test(u.hostname)?`<h3>Внимание</h3><div class="err">В адресе есть punycode (xn--). Так маскируют поддельные домены.</div>`:"");
 }},
 {c:"ip",n:"Инфо по IP",d:"Гео, провайдер, ASN, часовой пояс, обратный DNS",p:"8.8.8.8",f:async v=>{
   const ip=v.trim();if(!ip)throw new Error("Введи IP-адрес");
@@ -407,6 +543,18 @@ const T=[
   +`<h3>Страна</h3>`+rows([["часовой пояс",esc((tz.id||"—")+(tz.utc?" ("+tz.utc+")":""))],["местное время",esc(lt)],["валюта",esc(cu.code?cu.code+" "+(cu.symbol||""):"—")],["телефонный код",esc(j.calling_code?"+"+j.calling_code:"—")],["столица",esc(j.capital||"—")]])
   +`<h3>Репутация и сканы</h3>`+links([["Карта","https://www.google.com/maps?q="+j.latitude+","+j.longitude],["AbuseIPDB","https://www.abuseipdb.com/check/"+encodeURIComponent(j.ip)],["VirusTotal","https://www.virustotal.com/gui/ip-address/"+encodeURIComponent(j.ip)],["Shodan","https://www.shodan.io/host/"+encodeURIComponent(j.ip)],["Censys","https://search.censys.io/hosts/"+encodeURIComponent(j.ip)],["GreyNoise","https://viz.greynoise.io/ip/"+encodeURIComponent(j.ip)]]);
 }},
+{c:"ip",n:"CIDR-калькулятор",d:"Диапазон адресов подсети",p:"192.168.1.0/24",f:async v=>{
+  const m=v.trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/);
+  if(!m)throw new Error("Формат: 192.168.1.0/24 (только IPv4)");
+  const o=m.slice(1,5).map(Number),p=+m[5];if(o.some(x=>x>255)||p>32)throw new Error("Неверный адрес или маска");
+  const ip=((o[0]<<24)|(o[1]<<16)|(o[2]<<8)|o[3])>>>0;
+  const mask=p===0?0:(0xFFFFFFFF<<(32-p))>>>0;
+  const net=(ip&mask)>>>0,bc=(net|((~mask)>>>0))>>>0;
+  const s=n=>[n>>>24,(n>>>16)&255,(n>>>8)&255,n&255].join(".");
+  const tot=Math.pow(2,32-p);
+  return rows([["сеть",s(net)],["маска",s(mask)],["обратная маска",s((~mask)>>>0)],["первый адрес",s(p>=31?net:net+1)],["последний адрес",s(p>=31?bc:bc-1)],["широковещательный",s(bc)],["всего адресов",String(tot)],["хостов",String(p>=31?tot:tot-2)]])
+  +`<h3>Подробнее</h3>`+links([["Кому принадлежит сеть","https://bgp.he.net/net/"+s(net)+"/"+p]]);
+}},
 {c:"geo",n:"Координаты",d:"Адрес, высота, форматы, карты",p:"55.7558, 37.6173",f:async v=>{
   const m=v.replace(/,/g," ").split(/\s+/).filter(Boolean);if(m.length<2)throw new Error("Нужны две координаты через запятую");
   const la=+m[0],lo=+m[1];if(isNaN(la)||isNaN(lo))throw new Error("Координаты должны быть числами");
@@ -420,8 +568,39 @@ const T=[
   const hgt=el&&el.elevation&&el.elevation[0]!=null?el.elevation[0]+" м":"—";
   const st=((a.road||"")+" "+(a.house_number||"")).trim()||"—";
   return `<h3>Что здесь</h3>`+rows([["адрес",esc((geo&&geo.display_name)||"не найден")],["страна",esc(a.country||"—")],["регион",esc(a.state||a.region||"—")],["город",esc(a.city||a.town||a.village||"—")],["улица",esc(st)],["индекс",esc(a.postcode||"—")],["высота над морем",esc(hgt)]])
-  +`<h3>Форматы</h3>`+rows([["decimal",esc(la+", "+lo)],["DMS",esc(dms(la,"N","S")+" "+dms(lo,"E","W"))],["полушарие",esc((la>=0?"северное":"южное")+", "+(lo>=0?"восточное":"западное"))]])
-  +`<h3>Карты</h3>`+links([["Google","https://www.google.com/maps?q="+la+","+lo],["Яндекс","https://yandex.ru/maps/?pt="+lo+","+la+"&z=17"],["OpenStreetMap","https://www.openstreetmap.org/?mlat="+la+"&mlon="+lo],["Спутник (Google Earth)","https://earth.google.com/web/search/"+la+","+lo]]);
+  +`<h3>Форматы</h3>`+rows([["decimal",esc(la+", "+lo)],["DMS",esc(dms(la,"N","S")+" "+dms(lo,"E","W"))]])
+  +`<h3>Карты</h3>`+links([["Google","https://www.google.com/maps?q="+la+","+lo],["Яндекс","https://yandex.ru/maps/?pt="+lo+","+la+"&z=17"],["OpenStreetMap","https://www.openstreetmap.org/?mlat="+la+"&mlon="+lo],["Спутник","https://earth.google.com/web/search/"+la+","+lo]]);
+}},
+{c:"doc",n:"Проверка номеров",d:"ИНН, ОГРН, СНИЛС, КПП, карта, VIN",p:"вставь номер",f:async v=>{
+  const s=v.replace(/\s/g,"").toUpperCase();if(!s)throw new Error("Введи номер");
+  const d=s.replace(/\D/g,"");
+  const out=[];
+  if(/^\d{10}$/.test(d)) out.push(["ИНН, 10 знаков",innOk(d)]);
+  if(/^\d{12}$/.test(d)) out.push(["ИНН, 12 знаков",innOk(d)]);
+  if(/^\d{13}$/.test(d)) out.push(["ОГРН",ogrnOk(d)]);
+  if(/^\d{15}$/.test(d)) out.push(["ОГРНИП",ogrnOk(d)]);
+  if(/^\d{11}$/.test(d)) out.push(["СНИЛС",snilsOk(d)]);
+  if(/^\d{9}$/.test(s)) out.push(["КПП",kppOk(s)]);
+  if(/^\d{12,19}$/.test(d)) out.push(["номер карты (Луна)",luhnOk(d)]);
+  if(/^[A-HJ-NPR-Z0-9]{17}$/.test(s)) out.push(["VIN",vinOk(s)]);
+  if(/^\d{10}$/.test(d.slice(0,10)) && d.length===10) out.push(["паспорт РФ (формат)",true]);
+  if(!out.length) throw new Error("Не понял тип. Подойдут ИНН, ОГРН, ОГРНИП, СНИЛС, КПП, карта или VIN");
+  const okAll=out.every(([,x])=>x);
+  return `<h3>Результат</h3>`+rows(out.map(([n,x])=>[n,x?"верно":"неверно",x?"ok":"er"]))
+  +`<div class="note">${okAll?"Контрольные разряды сходятся.":"Контрольные разряды не сходятся — номер битый или выдуман."}${out.some(([n])=>n.startsWith("ИНН"))?"<br>ИНН по 10 знакам — организация, по 12 — человек.":""}</div>`
+  +`<h3>Проверить в реестрах</h3>`+links([["ЕГРЮЛ / ЕГРИП","https://egrul.nalog.ru/"],["Checko","https://checko.ru/search?query="+encodeURIComponent(s)],["Rusprofile","https://www.rusprofile.ru/search?query="+encodeURIComponent(s)],["Суды","https://sudact.ru/regular/doc/?q="+encodeURIComponent(s)]]);
+}},
+{c:"doc",n:"Генератор номеров",d:"Валидные ИНН, ОГРН, СНИЛС, карта, VIN",p:null,f:async()=>{
+  const inn10=()=>{const b=rnd(9);return b+innC([...b].map(Number),[2,4,10,3,5,9,4,6,8])};
+  const inn12=()=>{const a=rnd(10);const c11=innC([...a].map(Number),[7,2,4,10,3,5,9,4,6,8]);const b=a+c11;const c12=innC([...b].map(Number),[3,7,2,4,10,3,5,9,4,6,8]);return b+c12};
+  const ogrn=()=>{const b=rnd(12);return b+String((BigInt(b)%11n)%10n)};
+  const ogrnip=()=>{const b=rnd(14);return b+String((BigInt(b)%13n)%10n)};
+  const snils=()=>{const b=rnd(9);const d=[...b].map(Number);let sum=0;for(let i=0;i<9;i++)sum+=d[i]*(9-i);let c=sum<100?sum:(sum===100||sum===101?0:sum%101);if(c===100||c===101)c=0;return b+String(c).padStart(2,"0")};
+  const card=()=>luhnAdd("4276"+rnd(11));
+  const vin=()=>{const A="ABCDEFGHJKLMNPRSTUVWXYZ0123456789";let s=Array.from(crypto.getRandomValues(new Uint32Array(17))).map(x=>A[x%A.length]).join("");let u=s.slice(0,8)+"0"+s.slice(9);let sum=0;for(let i=0;i<17;i++){const c=u[i];sum+=(/\d/.test(c)?+c:VM[c])*VW[i]}const r=sum%11;s=u.slice(0,8)+(r===10?"X":String(r))+u.slice(9);return s};
+  const list=[["ИНН 10 (организация)",inn10()],["ИНН 12 (человек)",inn12()],["ОГРН",ogrn()],["ОГРНИП",ogrnip()],["СНИЛС",snils()],["карта Visa",card()],["VIN",vin()]];
+  const t=list.map(([n,x])=>n+": "+x).join("\n");
+  return rows(list.map(([n,x])=>[n,esc(x),innOk(x)||ogrnOk(x)||snilsOk(x)||luhnOk(x)||vinOk(x)?"ok":""]))+cpb(t);
 }},
 {c:"code",n:"Base64",d:"Кодирование и декодирование",p:"текст",f:async v=>{
   if(!v)throw new Error("Введи текст");
@@ -433,6 +612,40 @@ const T=[
   const p=v.trim().split(".");if(p.length<2)throw new Error("Это не JWT: нужны части через точку");
   const dec=s=>JSON.stringify(JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/"))))),null,2);
   return `<h3>Header</h3><div class="pre">${esc(dec(p[0]))}</div><h3>Payload</h3><div class="pre">${esc(dec(p[1]))}</div>`;
+}},
+{c:"code",n:"Определить тип хеша",d:"MD5, SHA, bcrypt и другие по внешнему виду",p:"вставь хеш целиком",f:async v=>{
+  const h=v.trim();if(!h)throw new Error("Вставь хеш");
+  const hex=/^[a-f0-9]+$/i.test(h),L=h.length,t=[];
+  if(/^\$2[abxy]\$\d\d\$.{53}$/.test(h))t.push("bcrypt");
+  if(/^\$argon2(id|i|d)\$/.test(h))t.push("Argon2");
+  if(/^\$6\$/.test(h))t.push("SHA-512 crypt (Linux)");else if(/^\$5\$/.test(h))t.push("SHA-256 crypt (Linux)");else if(/^\$1\$/.test(h))t.push("MD5 crypt (Linux)");
+  if(/^\*[A-F0-9]{40}$/i.test(h))t.push("MySQL 4.1+");
+  if(hex){const M={8:"CRC32 / Adler-32",16:"половина MD5 / MySQL 3.x",32:"MD5 / NTLM / MD4",40:"SHA-1 / RIPEMD-160",56:"SHA-224 / SHA3-224",64:"SHA-256 / SHA3-256 / BLAKE2s",96:"SHA-384",128:"SHA-512 / SHA3-512 / Whirlpool"};if(M[L])t.push(M[L])}
+  if(!t.length)throw new Error("Формат не распознан. Проверь, что вставлен хеш целиком");
+  return rows([["длина",String(L)],["символы",hex?"только hex":"не только hex"],["похоже на",esc(t.join("\n")),"ok"]])+`<div class="note">Определение по длине и виду. Хеш не раскодируется: разные алгоритмы дают одинаковую длину.</div>`;
+}},
+{c:"code",n:"Кодировки текста",d:"Hex, URL, двоичный вид, HTML-сущности",p:"текст или закодированная строка",f:async v=>{
+  if(!v)throw new Error("Введи текст");
+  const b=[...new TextEncoder().encode(v)];
+  const hex=b.map(x=>x.toString(16).padStart(2,"0")).join(" ");
+  const bin=b.map(x=>x.toString(2).padStart(8,"0")).join(" ");
+  const url=encodeURIComponent(v);
+  let du="—";try{du=decodeURIComponent(v)}catch(e){}
+  let dh="—";try{const t=v.replace(/0x|\s|\\x/gi,"");if(/^([0-9a-f]{2})+$/i.test(t))dh=new TextDecoder().decode(new Uint8Array(t.match(/../g).map(x=>parseInt(x,16))))}catch(e){}
+  const ent=Array.from(v).map(c=>/[\u0080-\uFFFF<>&"']/.test(c)?"&#"+c.codePointAt(0)+";":c).join("");
+  return `<h3>Кодирование</h3>`+rows([["hex",esc(hex)],["двоичный",esc(bin)],["URL",esc(url)],["HTML-сущности",esc(ent)]])
+  +`<h3>Если вставлена закодированная строка</h3>`+rows([["из URL",esc(du)],["из hex",esc(dh)]]);
+}},
+{c:"code",n:"Разбор User-Agent",d:"Браузер, система, устройство, бот",p:"Mozilla/5.0 ...",ta:true,f:async v=>{
+  const s=v.trim();if(!s)throw new Error("Вставь строку User-Agent");
+  const f=(re,d="—")=>{const m=s.match(re);return m?(m[1]||m[0]):d};
+  const bot=/bot|crawler|spider|curl|wget|python|java\/|okhttp|headless/i.test(s);
+  const br=f(/(Edg|Edge|OPR|Opera|YaBrowser|SamsungBrowser|Firefox|FxiOS|CriOS|Chrome|Safari)\/([\d.]+)/);
+  const ver=f(/(?:Edg|Edge|OPR|Opera|YaBrowser|SamsungBrowser|Firefox|FxiOS|CriOS|Chrome|Safari)\/([\d.]+)/);
+  const os=/Windows NT 10/.test(s)?"Windows 10/11":/Windows NT 6\.3/.test(s)?"Windows 8.1":/Windows/.test(s)?"Windows":/Android ([\d.]+)/.test(s)?"Android "+f(/Android ([\d.]+)/):/iPhone|iPad/.test(s)?"iOS "+f(/OS ([\d_]+)/,"").replace(/_/g,"."):/Mac OS X/.test(s)?"macOS":/Linux/.test(s)?"Linux":"—";
+  const dev=/iPhone/.test(s)?"iPhone":/iPad/.test(s)?"iPad":/Android/.test(s)?"Android-устройство":/Mobile/.test(s)?"мобильный":/Tablet/.test(s)?"планшет":"компьютер";
+  return rows([["браузер",esc(br)],["версия",esc(ver)],["система",esc(os)],["устройство",esc(dev)],["бот",bot?"да":"нет",bot?"er":"ok"],["длина",String(s.length)]])
+  +`<div class="note">UA легко подделать: он говорит, чем клиент представился, а не чем является на самом деле.</div>`;
 }},
 {c:"util",n:"Хеши текста",d:"MD5, SHA-1, SHA-256, SHA-512",p:"текст",f:async v=>{
   if(!v)throw new Error("Введи текст");
@@ -453,121 +666,7 @@ const T=[
 {c:"util",n:"Google dorks",d:"Готовые поисковые запросы",p:"домен",f:async v=>{
   const q=v.trim();if(!q)throw new Error("Введи домен или слово");
   const g=s=>"https://www.google.com/search?q="+encodeURIComponent(s);
-  return links([["Документы PDF",g("site:"+q+" filetype:pdf")],["Таблицы XLSX",g("site:"+q+" filetype:xlsx")],["Страницы входа",g("site:"+q+" inurl:login")],["Открытые каталоги",g("site:"+q+' intitle:"index of"')],["Файлы .env",g("site:"+q+" filetype:env")]]);
-}},
-{c:"nick",n:"GitHub-профиль",d:"Данные аккаунта, репозитории, почты из коммитов",p:"username",f:async v=>{
-  const u=norm(v);if(!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(u))throw new Error("Нужен корректный GitHub-ник");
-  const r=await fetch("https://api.github.com/users/"+encodeURIComponent(u));
-  if(r.status===404)throw new Error("Такого аккаунта нет");
-  if(r.status===403)throw new Error("Лимит GitHub API исчерпан (60 запросов в час). Попробуй позже");
-  if(!r.ok)throw new Error("GitHub вернул ошибку "+r.status);
-  const j=await r.json();
-  const dt=x=>x?new Date(x).toLocaleDateString("ru-RU"):"—";
-  let mails=[],repos=[];
-  try{const ev=await (await fetch("https://api.github.com/users/"+encodeURIComponent(u)+"/events/public?per_page=100")).json();
-    const set=new Set();(Array.isArray(ev)?ev:[]).forEach(e=>((e.payload&&e.payload.commits)||[]).forEach(c=>{if(c.author&&c.author.email)set.add(c.author.email)}));mails=[...set]}catch(e){}
-  try{const rp=await (await fetch("https://api.github.com/users/"+encodeURIComponent(u)+"/repos?sort=pushed&per_page=5")).json();repos=Array.isArray(rp)?rp:[]}catch(e){}
-  return `<h3>Профиль</h3>`+rows([["ник",esc(j.login)],["имя",esc(j.name||"—")],["о себе",esc(j.bio||"—")],["компания",esc(j.company||"—")],["место",esc(j.location||"—")],["сайт",esc(j.blog||"—")],["почта в профиле",esc(j.email||"—")],["X (Twitter)",esc(j.twitter_username||"—")]])
-  +`<h3>Активность</h3>`+rows([["создан",dt(j.created_at)],["обновлён",dt(j.updated_at)],["репозиториев",String(j.public_repos)],["gist",String(j.public_gists)],["подписчиков",String(j.followers)],["подписок",String(j.following)]])
-  +(mails.length?`<h3>Почты из последних коммитов</h3><div class="pre">${esc(mails.join("\n"))}</div>`:"")
-  +(repos.length?`<h3>Свежие репозитории</h3>`+links(repos.map(x=>[x.name+(x.language?" · "+x.language:""),x.html_url])):"")
-  +`<h3>Дальше</h3>`+links([["Профиль","https://github.com/"+u],["Аватар",j.avatar_url],["SSH-ключи","https://github.com/"+u+".keys"],["GPG-ключи","https://github.com/"+u+".gpg"]]);
-}},
-{c:"nick",n:"Транслит ника",d:"Русское имя латиницей в разных вариантах",p:"Иван Петров",f:async v=>{
-  if(!v.trim())throw new Error("Введи имя или слово");
-  const M={а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"e",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",м:"m",н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"kh",ц:"ts",ч:"ch",ш:"sh",щ:"shch",ъ:"",ы:"y",ь:"",э:"e",ю:"yu",я:"ya"};
-  const A={...M,х:"h",ц:"c",й:"j",ы:"i",ю:"u",ж:"j",щ:"sch",ё:"yo"};
-  const tr=(t,m)=>[...t.toLowerCase()].map(c=>m[c]!==undefined?m[c]:c).join("");
-  const a=tr(v.trim(),M),b=tr(v.trim(),A);
-  const parts=a.split(/\s+/).filter(Boolean);
-  const set=new Set([a.replace(/\s+/g,""),a.replace(/\s+/g,"_"),a.replace(/\s+/g,"."),b.replace(/\s+/g,""),b.replace(/\s+/g,"_")]);
-  if(parts.length>1){set.add(parts[0][0]+parts[1]);set.add(parts[0]+parts[1][0]);set.add(parts[1]+parts[0]);set.add(parts[1]+"_"+parts[0])}
-  const r=[...set].join("\n");
-  return `<h3>Варианты написания</h3><div class="pre">${esc(r)}</div>`+cpb(r);
-}},
-{c:"email",n:"Разбор заголовков письма",d:"Путь письма, IP отправителя, SPF, DKIM, DMARC",p:"Вставь служебные заголовки письма: строки From:, Received:, Subject:",ta:true,f:async v=>{
-  if(!/^\s*[\w-]+:/m.test(v))throw new Error("Вставь заголовки письма: строки вида From:, Received:, Subject:");
-  const un=v.replace(/\r?\n[ \t]+/g," ");
-  const hd=n=>{const r=un.match(new RegExp("^"+n+":\\s*(.*)$","im"));return r?r[1].trim():"—"};
-  const recv=[...un.matchAll(/^Received:\s*(.*)$/gim)].map(x=>x[1]).reverse();
-  const hops=recv.map((r,i)=>{const ips=[...new Set((r.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g)||[]).filter(x=>!/^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(x)))];const from=(r.match(/from\s+([^\s(]+)/i)||[])[1]||"—";return [(i+1)+". "+from,esc(ips.join("\n")||"—")]});
-  const auth=hd("Authentication-Results");
-  const res=k=>{const r=auth.match(new RegExp(k+"=(\\w+)","i"));return r?r[1].toLowerCase():"—"};
-  const c=x=>x==="pass"?"ok":(x==="—"?"":"er");
-  const mailer=hd("X-Mailer")!=="—"?hd("X-Mailer"):hd("User-Agent");
-  return `<h3>Основное</h3>`+rows([["От",esc(hd("From"))],["Кому",esc(hd("To"))],["Тема",esc(hd("Subject"))],["Дата",esc(hd("Date"))],["Return-Path",esc(hd("Return-Path"))],["Reply-To",esc(hd("Reply-To"))],["Message-ID",esc(hd("Message-ID"))],["Программа",esc(mailer)]])
-  +`<h3>Проверки подлинности</h3>`+rows([["SPF",esc(res("spf")),c(res("spf"))],["DKIM",esc(res("dkim")),c(res("dkim"))],["DMARC",esc(res("dmarc")),c(res("dmarc"))]])
-  +(hops.length?`<h3>Путь письма: от отправителя к тебе</h3>`+rows(hops):"");
-}},
-{c:"dom",n:"Хронология сайта",d:"Первая и последняя копия в Wayback Machine",p:"example.com",f:async v=>{
-  const u=v.trim().replace(/^https?:\/\//,"").replace(/\/$/,"");if(!u.includes("."))throw new Error("Нужен домен. Пример: example.com");
-  const q=l=>fetch("https://web.archive.org/cdx/search/cdx?url="+encodeURIComponent(u)+"&output=json&fl=timestamp,original,statuscode&limit="+l).then(r=>{if(!r.ok)throw 0;return r.json()});
-  let f,l;try{[f,l]=await Promise.all([q(1),q(-1)])}catch(e){throw new Error("Архив не ответил. Открой календарь копий вручную: web.archive.org/web/*/"+u)}
-  if(!f||f.length<2)throw new Error("В архиве нет копий этого адреса");
-  const fmt=t=>t.slice(0,4)+"-"+t.slice(4,6)+"-"+t.slice(6,8);
-  const a=f[1],b=l[1];
-  return rows([["первая копия",esc(fmt(a[0]))],["код ответа тогда",esc(a[2])],["последняя копия",esc(fmt(b[0]))],["код ответа",esc(b[2])]])
-  +`<h3>Открыть</h3>`+links([["Первая копия","https://web.archive.org/web/"+a[0]+"/"+a[1]],["Последняя копия","https://web.archive.org/web/"+b[0]+"/"+b[1]],["Календарь всех копий","https://web.archive.org/web/*/"+u]]);
-}},
-{c:"dom",n:"Свободные домены",d:"Занято ли имя в популярных зонах",p:"название без зоны, например myproject",f:async v=>{
-  const n=v.trim().toLowerCase().replace(/^https?:\/\//,"").split(".")[0];if(!/^[a-z0-9-]{2,63}$/.test(n))throw new Error("Нужно имя из латиницы, цифр и дефиса. Пример: myproject");
-  const z=["com","net","org","io","dev","app","info","xyz"];
-  const res=await Promise.all(z.map(async t=>{try{const r=await fetch("https://rdap.org/domain/"+n+"."+t);return [t,r.status===404?"free":r.ok?"busy":"?"]}catch(e){return [t,"?"]}}));
-  return `<h3>${esc(n)}</h3>`+rows(res.map(([t,s])=>["."+t,s==="free"?"вероятно свободен":s==="busy"?"занят":"не удалось проверить",s==="free"?"ok":s==="busy"?"er":""]));
-}},
-{c:"dom",n:"Разбор ссылки",d:"Части адреса, параметры, ссылка без трекеров",p:"https://site.com/page?utm_source=x&id=5",f:async v=>{
-  let s=v.trim();if(!s)throw new Error("Вставь ссылку");if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(s))s="https://"+s;
-  let u;try{u=new URL(s)}catch(e){throw new Error("Это не похоже на ссылку")}
-  const TR=/^(utm_|fbclid|gclid|yclid|mc_|_ga|igshid|ref$|ref_|si$|mkt_)/i;
-  const clean=new URL(u.href);[...clean.searchParams.keys()].forEach(k=>{if(TR.test(k))clean.searchParams.delete(k)});
-  const pr=[...u.searchParams.entries()];
-  return `<h3>Части</h3>`+rows([["протокол",esc(u.protocol.replace(":",""))],["хост",esc(u.hostname)],["порт",esc(u.port||"по умолчанию")],["путь",esc(u.pathname)],["якорь",esc(u.hash||"—")],["логин в ссылке",esc(u.username||"—")]])
-  +(pr.length?`<h3>Параметры</h3><div class="grp">`+pr.map(([k,x])=>`<div class="row"><div class="k">${esc(k)}</div><div class="v ${TR.test(k)?"er":""}">${esc(x)}</div></div>`).join("")+`</div>`:"")
-  +`<h3>Без трекеров</h3><div class="pre">${esc(clean.href)}</div>`+cpb(clean.href)
-  +(/xn--/.test(u.hostname)?`<h3>Внимание</h3><div class="err">В адресе есть punycode (xn--). Так иногда прячут домены, похожие на настоящие.</div>`:"");
-}},
-{c:"ip",n:"CIDR-калькулятор",d:"Диапазон адресов подсети",p:"192.168.1.0/24",f:async v=>{
-  const m=v.trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/);
-  if(!m)throw new Error("Формат: 192.168.1.0/24 (только IPv4)");
-  const o=m.slice(1,5).map(Number),p=+m[5];if(o.some(x=>x>255)||p>32)throw new Error("Неверный адрес или маска");
-  const ip=((o[0]<<24)|(o[1]<<16)|(o[2]<<8)|o[3])>>>0;
-  const mask=p===0?0:(0xFFFFFFFF<<(32-p))>>>0;
-  const net=(ip&mask)>>>0,bc=(net|((~mask)>>>0))>>>0;
-  const s=n=>[n>>>24,(n>>>16)&255,(n>>>8)&255,n&255].join(".");
-  const tot=Math.pow(2,32-p);
-  return rows([["сеть",s(net)],["маска",s(mask)],["обратная маска",s((~mask)>>>0)],["первый адрес",s(p>=31?net:net+1)],["последний адрес",s(p>=31?bc:bc-1)],["широковещательный",s(bc)],["всего адресов",String(tot)],["хостов",String(p>=31?tot:tot-2)]])
-  +`<h3>Подробнее</h3>`+links([["Кому принадлежит сеть","https://bgp.he.net/net/"+s(net)+"/"+p]]);
-}},
-{c:"code",n:"Определить тип хеша",d:"MD5, SHA, bcrypt и другие по внешнему виду",p:"вставь хеш целиком",f:async v=>{
-  const h=v.trim();if(!h)throw new Error("Вставь хеш");
-  const hex=/^[a-f0-9]+$/i.test(h),L=h.length,t=[];
-  if(/^\$2[abxy]\$\d\d\$.{53}$/.test(h))t.push("bcrypt");
-  if(/^\$argon2(id|i|d)\$/.test(h))t.push("Argon2");
-  if(/^\$6\$/.test(h))t.push("SHA-512 crypt (Linux)");else if(/^\$5\$/.test(h))t.push("SHA-256 crypt (Linux)");else if(/^\$1\$/.test(h))t.push("MD5 crypt (Linux)");
-  if(/^\*[A-F0-9]{40}$/i.test(h))t.push("MySQL 4.1+");
-  if(hex){const M={8:"CRC32 / Adler-32",16:"половина MD5 / MySQL 3.x",32:"MD5 / NTLM / MD4",40:"SHA-1 / RIPEMD-160",56:"SHA-224 / SHA3-224",64:"SHA-256 / SHA3-256 / BLAKE2s",96:"SHA-384",128:"SHA-512 / SHA3-512 / Whirlpool"};if(M[L])t.push(M[L])}
-  if(!t.length)throw new Error("Формат не распознан. Проверь, что вставлен хеш целиком");
-  return rows([["длина",String(L)],["символы",hex?"только hex":"не только hex"],["похоже на",esc(t.join("\n")),"ok"]])+`<div class="note">Это определение по длине и виду. Хеш нельзя «раскодировать»: его считают в одну сторону, а разные алгоритмы могут давать одинаковую длину.</div>`;
-}},
-{c:"code",n:"Кодировки текста",d:"Hex, URL, двоичный вид, HTML-сущности",p:"текст или закодированная строка",f:async v=>{
-  if(!v)throw new Error("Введи текст");
-  const b=[...new TextEncoder().encode(v)];
-  const hex=b.map(x=>x.toString(16).padStart(2,"0")).join(" ");
-  const bin=b.map(x=>x.toString(2).padStart(8,"0")).join(" ");
-  const url=encodeURIComponent(v);
-  let du="—";try{du=decodeURIComponent(v)}catch(e){}
-  let dh="—";try{const t=v.replace(/0x|\s|\\x/gi,"");if(/^([0-9a-f]{2})+$/i.test(t))dh=new TextDecoder().decode(new Uint8Array(t.match(/../g).map(x=>parseInt(x,16))))}catch(e){}
-  const ent=Array.from(v).map(c=>/[\u0080-\uFFFF<>&"']/.test(c)?"&#"+c.codePointAt(0)+";":c).join("");
-  return `<h3>Кодирование</h3>`+rows([["hex",esc(hex)],["двоичный",esc(bin)],["URL",esc(url)],["HTML-сущности",esc(ent)]])
-  +`<h3>Если вставлена закодированная строка</h3>`+rows([["из URL",esc(du)],["из hex",esc(dh)]]);
-}},
-{c:"code",n:"Шифр Цезаря и ROT13",d:"Сдвиг букв и перебор всех вариантов",p:"текст",f:async v=>{
-  if(!v)throw new Error("Введи текст");
-  const lat="abcdefghijklmnopqrstuvwxyz",cyr="абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
-  const sh=(t,n)=>[...t].map(c=>{const lo=c.toLowerCase(),up=c!==lo;for(const A of [lat,cyr]){const i=A.indexOf(lo);if(i>=0){const r=A[(i+n)%A.length];return up?r.toUpperCase():r}}return c}).join("");
-  const isCyr=/[а-яё]/i.test(v),N=isCyr?33:26;
-  const all=[];for(let n=1;n<N;n++)all.push(["сдвиг "+n,esc(sh(v,n))]);
-  return (isCyr?"":`<h3>ROT13</h3>`+rows([["результат",esc(sh(v,13))]]))+`<h3>Все сдвиги</h3>`+rows(all);
+  return links([["Документы PDF",g("site:"+q+" filetype:pdf")],["Таблицы XLSX",g("site:"+q+" filetype:xlsx")],["Страницы входа",g("site:"+q+" inurl:login")],["Открытые каталоги",g("site:"+q+' intitle:"index of"')],["Файлы .env",g("site:"+q+" filetype:env")],["Конфиги",g("site:"+q+" filetype:conf OR filetype:config")],["Дампы SQL",g("site:"+q+" filetype:sql")]]);
 }},
 {c:"util",n:"Извлечь данные из текста",d:"Найти email, IP, ссылки, телефоны и @ники",p:"Вставь текст, переписку или логи",ta:true,f:async v=>{
   if(!v.trim())throw new Error("Вставь текст");
@@ -583,87 +682,47 @@ const T=[
   ].filter(([,a])=>a.length);
   if(!sets.length)throw new Error("Ничего не нашёл. Нужен текст с адресами, номерами или ссылками");
   return sets.map(([t,a])=>`<h3>${t}: ${a.length}</h3><div class="pre">${esc(a.join("\n"))}</div>`+cpb(a.join("\n"))).join("");
-}},
-{c:"leak",n:"Пробив по базам",d:"Телефон, email, ФИО, ник, ИНН — сводка по утечкам",p:"+7 999 123-45-67 / mail@ya.ru / Иванов Иван",f:async v=>{
-  const raw=v.trim();if(!raw)throw new Error("Введи значение для поиска");
-  const r=await api("lookup",{value:raw});
-  if(!r.job)throw new Error("Не удалось создать задачу");
-  window.__job=r.job;
-  return `<div class="grp"><div class="row"><div class="k">Статус</div><div class="v" id="pvs">ищу… <span id="pvt">0</span> с</div></div></div><div id="pv"></div>`;
-},after:()=>{
-  const t0=Date.now();let n=0;
-  const tick=setInterval(async()=>{
-    const st=document.getElementById("pvs");
-    if(!st){ clearInterval(tick); return; }
-    if(++n>90){ clearInterval(tick); st.textContent="слишком долго"; return }
-    const s0=document.getElementById("pvt");
-    if(s0) s0.textContent=Math.round((Date.now()-t0)/1000);
-    let s;
-    try{ s=await api("job/"+window.__job); }catch(e){ return }
-    if(s.status==="running") return;
-    clearInterval(tick);
-    st.textContent=s.status==="done"?"готово":"ошибка";
-    const el=document.getElementById("pv");
-    if(s.status==="error"){ el.innerHTML=`<div class="err">${esc(s.err||"Ошибка источника")}</div>`; return }
-    let d;try{ d=JSON.parse(s.result) }catch(e){ el.innerHTML=`<div class="err">Некорректный ответ</div>`; return }
-    const stat=Object.entries(d.stats||{}).map(([k,x])=>k+": "+x).join(", ")||"—";
-    el.innerHTML = rows([
-      ["Субъект",esc(d.subject.value)],
-      ["Найдено",esc(stat)],
-      ["Источники",esc((d.providers||[]).join(", ")||"—")],
-      ["Списано",esc(String(d.charge||0))],
-      ["Ошибки",esc((d.errors||[]).join("; ")||"—")]
-    ])
-    +((d.records||[]).length?`<h3>Записи</h3><div class="grp">`+d.records.slice(0,100).map(x=>`<div class="row"><div class="k">${esc(x.kind)}</div><div class="v">${esc(x.value)}${x.source?`<br><span style="color:var(--mut)">${esc(x.source)}</span>`:""}</div></div>`).join("")+`</div>`:"")
-    +`<button class="b2" id="tg2">Открыть в «Следы»</button>`;
-    const own=eco&&eco.owned&&eco.owned.includes("sledy");
-    document.getElementById("tg2").onclick=()=>{
-      localStorage.setItem("sledy_import",JSON.stringify(d.board));
-      const vv=VIZ.find(x=>x.id===(own?"sledy":"lite"));
-      if(vv) openViz(vv);
-    };
-  },2000);
 }}
 ];
 
 const DESC={
-"Профиль Телеграм":"Принимает юзернейм и собирает ссылки: профиль на t.me, публичная лента, каталоги TGStat и Telemetr, поиск в Google по нику. Сам Телеграм не опрашивает: открывает внешние страницы.",
-"Поиск каналов":"Ищет публичные каналы и чаты по слову или теме: в каталогах TGStat, Telemetr, Lyzem и в Google (site:t.me). Открывает готовые страницы поиска.",
-"Скан по платформам":"Строит ссылки на один ник в 30 сервисах: GitHub, VK, Instagram, Reddit, Steam и других. Отмечаешь нужные и открываешь пачкой, чтобы увидеть, где ник занят. Решение «есть или нет» остаётся за тобой.",
-"Вариации никнейма":"Из одного ника делает больше десятка похожих: с цифрами, подчёркиванием, приставками, заменой букв на цифры. Нужно, когда человек пишет свой ник по-разному на разных площадках.",
-"GitHub-профиль":"Берёт открытые данные аккаунта GitHub: имя, компания, место, сайт, даты, число репозиториев и подписчиков. Показывает <b>почты из последних коммитов</b> и свежие репозитории, даёт ссылки на публичные SSH- и GPG-ключи. Лимит GitHub без ключа: 60 запросов в час.",
-"Транслит ника":"Превращает русское имя в латиницу разными способами (zh или j, kh или h) и собирает ники: имя.фамилия, ифамилия, фамилия_имя. Помогает угадать, как человек мог назвать себя в сети.",
-"Проверка email":"Проверяет адрес, ничего не отправляя: что за домен, принимает ли он почту (MX), какой почтовый провайдер, настроены ли SPF и DMARC, не одноразовый ли адрес. Считает хеши адреса, ищет аватар в Gravatar, даёт ссылки на проверку утечек.",
-"Разбор заголовков письма":"Принимает служебные заголовки письма («показать исходник» в почте). Достаёт отправителя, Reply-To, программу отправки, результаты SPF, DKIM и DMARC и <b>путь письма</b> по серверам с публичными IP. Помогает понять, не подделано ли письмо.",
-"Инфо по номеру":"Определяет страну по коду, проверяет длину, для российских номеров показывает тип (мобильный или городской). Генерирует варианты записи для поиска и даёт ссылки на Telegram, WhatsApp, Viber, Signal и поиск. Оператора и владельца номер не раскрывает.",
-"DNS-записи":"Запрашивает записи домена через Google DNS: A, AAAA, CNAME, MX, NS, TXT, SOA, CAA, а также проверку DNSSEC. Показывает, где хостится сайт, кто принимает почту и какие сервисы подключены.",
-"Почтовая гигиена":"Смотрит, защищён ли домен от подделки писем: есть ли SPF и DMARC и какая политика у DMARC (none, quarantine или reject).",
-"WHOIS домена":"Через RDAP показывает регистратора, даты создания, изменения и окончания регистрации, статус и серверы имён. Возраст домена часто говорит о его надёжности.",
-"Архив и история":"Ищет ближайшую сохранённую копию страницы в Wayback Machine и даёт ссылки на все снимки, поддомены (crt.sh) и поиск Google по сайту.",
-"Хронология сайта":"Находит <b>первую и последнюю копию</b> сайта в Wayback Machine и код ответа сервера тогда. Видно, как давно сайт существует и когда его последний раз сохраняли.",
-"Свободные домены":"Проверяет, занято ли имя в зонах .com, .net, .org, .io, .dev, .app, .info, .xyz через RDAP. Результат «свободен» вероятный: перед покупкой проверь у регистратора.",
-"Разбор ссылки":"Разбирает ссылку на части (хост, путь, порт, параметры), подсвечивает трекеры вроде utm_ и fbclid и даёт <b>ссылку без трекеров</b>. Предупреждает о punycode (xn--), которым маскируют поддельные домены. Ссылку не открывает.",
-"Инфо по IP":"Показывает страну, регион, город, индекс, провайдера, организацию, ASN, часовой пояс, валюту и обратный DNS. Даёт ссылки на AbuseIPDB, VirusTotal, Shodan, Censys и GreyNoise. Точный адрес человека по IP узнать нельзя: обычно это уровень города.",
-"CIDR-калькулятор":"По записи вида 192.168.1.0/24 считает маску, первый и последний адрес, широковещательный адрес и число хостов. Удобно для анализа диапазонов IP.",
-"Координаты":"Принимает широту и долготу, находит адрес и город на этом месте, считает высоту над уровнем моря и переводит в формат градусов-минут-секунд. Даёт ссылки на Google, Яндекс, OSM и спутник.",
-"Base64":"Кодирует текст в Base64 и пробует декодировать введённую строку обратно.",
-"Разбор JWT":"Раскладывает токен на части и показывает header и payload в читаемом виде. Подпись не проверяет. Не вставляй сюда рабочие токены чужих сервисов.",
-"Хеши текста":"Считает MD5, SHA-1, SHA-256 и SHA-512 от введённого текста. Всё происходит в телефоне, текст никуда не отправляется.",
-"Определить тип хеша":"По длине и виду определяет, каким алгоритмом мог быть получен хеш: MD5, SHA-1, SHA-256, bcrypt и другие. Это догадка по формату, а не расшифровка.",
-"Кодировки текста":"Переводит текст в hex, двоичный вид, URL-кодировку и HTML-сущности. Если вставить закодированную строку, пробует прочитать её из URL или hex.",
-"Шифр Цезаря и ROT13":"Сдвигает буквы алфавита (латиница и кириллица) и показывает сразу все варианты сдвига. Помогает разобрать простые шифры из записок и загадок.",
-"Timestamp":"Переводит Unix-время в дату и обратно: показывает секунды, формат ISO и локальное время.",
-"Генераторы":"Создаёт случайный UUID и надёжный пароль на 20 символов. Всё генерируется на устройстве.",
-"Google dorks":"Готовые поисковые запросы по сайту: документы PDF и XLSX, страницы входа, открытые каталоги, файлы .env. Используй для проверки своих сайтов и открытых данных.",
-"Извлечь данные из текста":"Вставляешь любой текст, переписку или лог, а инструмент находит и собирает отдельно email, IP-адреса, ссылки, телефоны, @ники, хеши и домены без повторов. Всё делается на устройстве.",
-"Пробив по базам":"Отправляет телефон, email, ФИО, ник или ИНН в сервисы утечек (LeakCheck, Osintleak, Snusbase, HIBP, DeHashed) и собирает сводку: сколько записей нашлось, в каких базах и какие поля. Стоит запросов по числу подключённых источников, кэш на неделю дешевле. Кнопка «Открыть в Следы» переносит результат на доску карточками и связями."
+"Профиль Телеграм":"Юзернейм превращается в ссылки: профиль t.me, публичная лента, каталоги TGStat и Telemetr, поиск в Google по нику.",
+"Поиск каналов":"Публичные каналы по слову: TGStat, Telemetr, Lyzem, Google по site:t.me.",
+"Скан по платформам":"Один ник в 30 сервисах. Отмечаешь нужные, открываешь пачкой, видишь где занят.",
+"Вариации никнейма":"Из ника делает десятки похожих: цифры, подчёркивания, приставки, замена букв на цифры.",
+"Транслит ника":"Русское имя латиницей разными схемами плюс готовые ники имя.фамилия, ифамилия, фамилия_имя.",
+"GitHub-профиль":"Открытые данные аккаунта, <b>почты из коммитов</b>, свежие репозитории, ссылки на SSH- и GPG-ключи. Лимит 60 запросов в час.",
+"Проверка email":"Что за домен, принимает ли почту, провайдер, SPF, DMARC, одноразовость, хеши, Gravatar.",
+"Разбор заголовков письма":"Из служебных заголовков достаёт отправителя, Reply-To, программу отправки, результаты SPF/DKIM/DMARC и <b>путь письма</b> по IP. Основной инструмент при разборе фишинга.",
+"Инфо по номеру":"Страна по коду, длина, тип для РФ, варианты записи, ссылки в мессенджеры и поиск.",
+"DNS-записи":"A, AAAA, CNAME, MX, NS, TXT, SOA, CAA, DNSSEC через Google DNS. Где хостинг, кто принимает почту, какие сервисы подключены.",
+"WHOIS домена":"Регистратор, даты, статус, NS через RDAP. Возраст домена говорит о надёжности.",
+"Архив и история":"Первая и последняя копия в Wayback, календарь снимков, поддомены, поиск по сайту.",
+"Поддомены":"Собирает поддомены из журналов сертификатов crt.sh. Видно инфраструктуру и тестовые стенды.",
+"Фишинг-домены":"Строит омоглиф на кириллице, его punycode и десятки опечаток: пропуск буквы, дубль, перестановка, подмена зоны, дефис. Готовый набор для проверки и регистрации.",
+"Редиректы ссылки":"Проходит по адресу и показывает, куда он ведёт на самом деле. Так вскрывают сокращалки и трекеры в фишинге.",
+"Разбор ссылки":"Части адреса, параметры, подсветка трекеров, чистая ссылка. Предупреждает о punycode.",
+"Инфо по IP":"Гео, провайдер, ASN, часовой пояс, обратный DNS, ссылки на AbuseIPDB, VirusTotal, Shodan, Censys, GreyNoise.",
+"CIDR-калькулятор":"Маска, диапазон, число хостов. Для разбора подсетей.",
+"Координаты":"Адрес и высота по координатам, форматы записи, ссылки на карты.",
+"Проверка номеров":"Считает контрольные разряды ИНН, ОГРН, ОГРНИП, СНИЛС, КПП, карты по Луну и VIN. Сразу видно, настоящий номер или выдуманный. Плюс ссылки в ЕГРЮЛ, Checko, Rusprofile и суды.",
+"Генератор номеров":"Выдаёт номера с верными контрольными разрядами: ИНН, ОГРН, ОГРНИП, СНИЛС, карта, VIN. Для тестовых данных и заполнения форм.",
+"Base64":"Кодирует и декодирует Base64.",
+"Разбор JWT":"Показывает header и payload токена. Подпись не проверяет.",
+"Определить тип хеша":"По длине и виду определяет алгоритм: MD5, SHA, bcrypt и другие. Не расшифровка.",
+"Кодировки текста":"Hex, двоичный вид, URL, HTML-сущности и обратное чтение.",
+"Разбор User-Agent":"Браузер, версия, система, устройство, признак бота. Для разбора логов и лендингов.",
+"Хеши текста":"MD5, SHA-1, SHA-256, SHA-512 локально, без отправки.",
+"Timestamp":"Unix-время в дату и обратно.",
+"Генераторы":"UUID и пароль на 20 символов на устройстве.",
+"Google dorks":"Готовые дорки: PDF, XLSX, страницы входа, открытые каталоги, .env, конфиги, дампы SQL.",
+"Извлечь данные из текста":"Собирает из любого текста email, IP, ссылки, телефоны, @ники, хеши, домены. Локально."
 };
 
-const CATS=[["all","Все"],["leak","Пробив"],["tg","Телеграм"],["nick","Никнеймы"],["email","Email"],["phone","Телефон"],["dom","Домен"],["ip","IP"],["geo","Гео"],["code","Кодирование"],["util","Утилиты"]];
+const CATS=[["all","Все"],["doc","Документы"],["tg","Телеграм"],["nick","Никнеймы"],["email","Email"],["phone","Телефон"],["dom","Домен"],["ip","IP"],["geo","Гео"],["code","Кодирование"],["util","Утилиты"]];
 const CATNAME=Object.fromEntries(CATS);
 const byName = n => T.findIndex(t=>t.n===n);
 
-/* ---------- распознавание введённых данных ---------- */
 function detect(v){
   v=v.trim(); if(!v) return null;
   if(/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)) return ["на email","Проверка email"];
@@ -671,14 +730,13 @@ function detect(v){
   if(/^(\d{1,3}\.){3}\d{1,3}$/.test(v) || (/^[0-9a-f:]{3,39}$/i.test(v) && (v.match(/:/g)||[]).length>=2)) return ["на IP-адрес","Инфо по IP"];
   if(/^-?\d{1,3}(\.\d+)?\s*[, ]\s*-?\d{1,3}(\.\d+)?$/.test(v)) return ["на координаты","Координаты"];
   if(/^\+[\d\s()-]{7,}$/.test(v)) return ["на номер телефона","Инфо по номеру"];
-  if(/^\d{10}$|^\d{13}$/.test(v)) return ["на Unix-время","Timestamp"];
+  if(/^\d{10}$|^\d{13}$/.test(v)) return ["на номер","Проверка номеров"];
   if(/^[\d\s()-]{10,}$/.test(v)) return ["на номер телефона","Инфо по номеру"];
   if(/^@\w{3,}$/.test(v)) return ["на юзернейм","Профиль Телеграм"];
   if(/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/\S*)?$/i.test(v)) return ["на домен","DNS-записи"];
   return null;
 }
 
-/* ---------- список ---------- */
 let cat="all";
 function drawChips(){ $("#chips").innerHTML = CATS.map(([k,n])=>`<button class="chip ${k===cat?'on':''}" data-c="${k}">${n}</button>`).join(""); }
 
@@ -709,16 +767,15 @@ function drawList(animate){
   if(animate) g.querySelectorAll(".item,.gh").forEach((el,k)=>el.style.setProperty("--n",Math.min(k,16)));
 }
 
-/* ---------- экран инструмента ---------- */
 function openTool(i, preset){
   const t=T[i]; if(!t) return;
   $("#list").classList.add("hide"); $("#tool").classList.remove("hide");
   tg?.BackButton?.show();
   $("#tool").innerHTML = `<button class="back" id="bk">${I.back}Назад</button>
   <div class="th"><div class="ico" style="--h:${HUE[t.c]}">${I[t.c]}</div><div><h2>${esc(t.n)}</h2><p>${esc(t.d)}</p></div><button class="star ${favs.includes(t.n)?'on':''}" id="st" aria-label="В избранное">${I.star}</button></div>
-  <div class="info">${DESC[t.n]||esc(t.d)}${ecoState==="ok"?`<div class="cost">${costOf(t)?"Стоит 1 запрос":"Бесплатно"}</div>`:""}</div>
+  <div class="info">${DESC[t.n]||esc(t.d)}</div>
   ${t.p?`<label class="lb" for="in">${t.ta?"Вставь сюда":"Что проверить"}</label>`+(t.ta?`<textarea class="f ta" id="in" placeholder="${esc(t.p)}" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>`:`<input class="f" id="in" placeholder="${esc(t.p)}" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go">`):""}
-  <button class="run" id="rn">${t.p?"Проверить":"Сгенерировать"}${ecoState==="ok"&&costOf(t)?" · 1 запрос":""}</button><div class="out" id="o"></div>`;
+  <button class="run" id="rn">${t.p?"Проверить":"Сгенерировать"}</button><div class="out" id="o"></div>`;
   $("#bk").onclick = closeTool;
   $("#st").onclick = () => {
     hap();
@@ -729,20 +786,13 @@ function openTool(i, preset){
   const run = async () => {
     hap();
     const o=$("#o"), btn=$("#rn");
-    const cost=costOf(t);
-    if(cost && ecoState==="locked"){ o.innerHTML='<div class="err">Запросы работают только внутри Телеграма. Открой приложение через бота.</div>'; return }
-    if(cost && ecoState==="ok" && eco.requests<cost){ shopSheet(true); return }
     btn.disabled=true;
     o.innerHTML='<div class="grp"><div class="skl" style="--w:55%"></div><div class="skl" style="--w:85%"></div><div class="skl" style="--w:70%"></div><div class="skl" style="--w:90%"></div></div>';
     try{
       const res = await t.f(t.p?$("#in").value:"");
-      if(cost && ecoState==="ok"){
-        try{ eco=await api("spend"); renderWallet(); }
-        catch(e){ if(e.status===402){ eco.requests=0; renderWallet(); o.innerHTML=""; btn.disabled=false; shopSheet(true); return } }
-      }
       o.innerHTML = res;
       t.after?.();
-      if(t.p && !t.ta && t.c!=="code" && t.n!=="Хеши текста"){
+      if(t.p && !t.ta){
         const val=$("#in").value.trim();
         hist=[{n:t.n,v:val},...hist.filter(x=>!(x.n===t.n&&x.v===val))].slice(0,8);
         store.set("osint_hist",hist);
@@ -770,19 +820,13 @@ function closeTool(){
   drawList(false);
 }
 
-/* ---------- Магазин: запросы и визуализаторы ---------- */
-const FREE_TOOLS=new Set(["Профиль Телеграм","Поиск каналов","Скан по платформам","Вариации никнейма","Транслит ника","Разбор заголовков письма","Инфо по номеру","Разбор ссылки","CIDR-калькулятор","Base64","Разбор JWT","Хеши текста","Определить тип хеша","Кодировки текста","Шифр Цезаря и ROT13","Timestamp","Генераторы","Google dorks","Извлечь данные из текста"]);
-const costOf=t=>FREE_TOOLS.has(t.n)?0:1;
-const pl=(n,a)=>{const m=n%10,h=n%100;return n+" "+(m===1&&h!==11?a[0]:(m>=2&&m<=4&&(h<12||h>14))?a[1]:a[2])};
-const fmtT=sec=>{const h=Math.floor(sec/3600),m=Math.max(1,Math.floor(sec%3600/60));return h?h+" ч "+m+" мин":m+" мин"};
-
 const VIZ=[
   {id:"sledy",item:"sledy",title:"Следы",sub:"Доска расследований",hue:"#f0b429",
-   desc:"Карточки людей, телефонов, email и доменов, связи между ними, 2D-доска и живой 3D-граф. Работает офлайн, данные остаются у тебя.",
-   full:["Карточки, связи, фигуры и рисование без ограничений","Живой 3D-граф: вращение, 6 раскладок, поиск путей, PNG и видео","Работа вместе по коду комнаты","Импорт из CSV и Obsidian, экспорт в Markdown, CSV, GraphML и PDF","Много досок, шаблоны, версии, режим презентации","Один файл, работает офлайн, без регистрации"],
+   desc:"Карточки, связи, 2D-доска и живой 3D-граф. Работает офлайн.",
+   full:["Карточки, связи, фигуры и рисование без ограничений","Живой 3D-граф: вращение, 6 раскладок, поиск путей, PNG и видео","Совместная работа по коду комнаты","Импорт из CSV и Obsidian, экспорт в Markdown, CSV, GraphML, PDF","Много досок, шаблоны, версии, режим презентации","Один файл, офлайн, без регистрации"],
    demo:["До 4 карточек","3D только для просмотра"]},
   {id:"lite",title:"Следы Lite",sub:"Бесплатное демо",hue:"#8ea2ff",free:true,src:"/viz/sledy-lite.html",
-   desc:"Та же доска, но до 4 карточек и 3D только для просмотра. Чтобы попробовать, прежде чем покупать."}
+   desc:"Та же доска, но до 4 карточек. Попробовать перед покупкой."}
 ];
 
 let eco=null, ecoState="loading";
@@ -810,10 +854,15 @@ function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); 
 
 function renderWallet(){
   const w=$("#wlt");
-  if(ecoState==="off"||ecoState==="loading"){ w.innerHTML=""; return }
-  if(ecoState==="locked"){ w.innerHTML=`<div class="wallet" style="cursor:default"><div class="ico" style="--h:#f2c14e">${I.bolt}</div><div class="wt"><b>Запросы и покупки</b><span>Откройте приложение внутри Телеграма</span></div></div>`; return }
+  if(ecoState!=="ok"){ w.innerHTML=""; return }
   const c=eco.canClaim;
-  w.innerHTML=`<button class="wallet" data-act="shop"><div class="ico" style="--h:#f2c14e">${I.bolt}</div><div class="wt"><b>${pl(eco.requests,["запрос","запроса","запросов"])}</b><span>${c?"Бесплатные "+eco.daily+" ждут тебя":"Следующие бесплатные через "+fmtT(eco.nextClaimSec)}</span></div><span class="wb ${c?"hot":""}" data-act="${c?"claim":"shop"}">${c?"Забрать +"+eco.daily:"Купить"}</span></button>`;
+  const inf=eco.unlimited||eco.admin;
+  w.innerHTML=`<button class="wallet" data-act="shop"><div class="ico" style="--h:#f2c14e">${I.bolt}</div><div class="wt"><b>${inf?"∞ запросов":pl(eco.requests,["запрос","запроса","запросов"])}</b><span>${inf?"без ограничений":c?"Бесплатные "+eco.daily+" ждут тебя":"Следующие бесплатные через "+fmtT(eco.nextClaimSec)}</span></div><span class="wb ${c&&!inf?"hot":""}" data-act="${c&&!inf?"claim":"shop"}">${inf?"∞":c?"Забрать +"+eco.daily:"Купить"}</span></button>`;
+}
+function renderAdmin(){
+  const a=$("#adw");
+  if(!eco||!eco.admin){ a.innerHTML=""; return }
+  a.innerHTML=`<button class="wallet" data-act="admin"><div class="ico" style="--h:#8ea2ff">${I.doc}</div><div class="wt"><b>Админ-панель</b><span>пользователи, запросы, доступы</span></div><span class="wb">войти</span></button>`;
 }
 function renderViz(){
   $("#vzw").innerHTML=`<div class="gh" style="margin-top:22px">Визуализаторы</div>`+VIZ.map(v=>{
@@ -823,7 +872,7 @@ function renderViz(){
     return `<button class="vz" data-viz="${v.id}" style="--h:${v.hue}"><div class="ico">${I.graph}</div><div class="tx"><div class="cn">${esc(v.title)}</div><div class="cd">${esc(v.sub)}</div><div class="vd">${esc(v.desc)}</div></div>${badge}</button>`;
   }).join("");
 }
-function renderEco(){ renderWallet(); renderViz(); }
+function renderEco(){ renderWallet(); renderAdmin(); renderViz(); }
 
 function openSheet(html){ const s=$("#shade"); s.innerHTML=`<div class="sheet" role="dialog">${html}</div>`; s.classList.remove("hide"); sheetOpen=true; tg?.BackButton?.show(); }
 function closeSheet(){ $("#shade").classList.add("hide"); $("#shade").innerHTML=""; sheetOpen=false; if($("#tool").classList.contains("hide")&&!vizOpen) tg?.BackButton?.hide(); }
@@ -834,17 +883,40 @@ function buySheet(v){
     <div class="feat"><b>В бесплатном демо</b><ul>${v.demo.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
     <button class="run" data-act="buy" data-item="${v.item}">Разблокировать за ${it.price} ⭐</button>
     <button class="b2 wide" data-act="demo">Сначала попробовать демо</button>
-    <p class="fine">Оплата звёздами Telegram. Покупка навсегда и привязана к твоему аккаунту. По вопросам оплаты: команда /paysupport у бота.</p>`);
+    <p class="fine">Оплата звёздами Telegram. Покупка навсегда. Вопросы по оплате: /paysupport у бота.</p>`);
 }
 function shopSheet(low){
   const packs=Object.entries(eco.items).filter(([,x])=>x.type==="pack");
   openSheet(`<h2>${low?"Запросы закончились":"Запросы"}</h2>
-    <p class="sp1">Запрос тратится, когда инструмент обращается к внешним сервисам: DNS, IP, WHOIS, GitHub и другие. Локальные инструменты бесплатны.</p>
-    <div class="bal"><b>${pl(eco.requests,["запрос","запроса","запросов"])}</b><span>${eco.canClaim?"Можно забрать бесплатные":"Следующие бесплатные через "+fmtT(eco.nextClaimSec)}</span></div>
+    <p class="sp1">Почти все инструменты работают без запросов. Запросы нужны для платных источников и визуализаторов.</p>
+    <div class="bal"><b>${eco.unlimited||eco.admin?"∞":pl(eco.requests,["запрос","запроса","запросов"])}</b><span>${eco.canClaim?"Можно забрать бесплатные":"Следующие бесплатные через "+fmtT(eco.nextClaimSec)}</span></div>
     ${eco.canClaim?`<button class="run" data-act="claim" style="margin:0 0 6px">Забрать бесплатные +${eco.daily}</button>`:""}
     <div class="gh" style="margin-top:18px">Пакеты</div>
     <div class="grp">${packs.map(([k,x])=>`<button class="item" data-act="buy" data-item="${k}"><div class="ico" style="--h:#f2c14e">${I.bolt}</div><div class="tx"><div class="cn">${esc(x.title)}</div></div><span class="price">${x.price} ⭐</span></button>`).join("")}</div>
     <p class="fine">Оплата звёздами Telegram. Запросы не сгорают.</p>`);
+}
+async function adminSheet(){
+  openSheet(`<h2>Админ</h2><p class="sp1"><span class="sp"></span>Загрузка…</p>`);
+  let d;
+  try{ d=await api("admin/users"); }
+  catch(e){ openSheet(`<h2>Админ</h2><div class="err">${esc(e.message)}</div>`); return }
+  const st=d.stat||{};
+  openSheet(`<h2>Админ</h2>
+    <div class="bal"><b>${st.users||0}</b><span>пользователей · ${st.jobs||0} задач · ${st.ops||0} операций</span></div>
+    <div class="gh">Себе</div>
+    <div class="adm"><button class="b2" data-act="adm-self">∞ бесконечно</button><button class="b2" data-act="adm-own">открыть «Следы»</button></div>
+    <div class="gh">Выдать по ID</div>
+    <input class="f" id="admid" placeholder="Telegram ID" inputmode="numeric">
+    <div class="adm"><button class="b2" data-act="adm-add" data-add="100">+100</button><button class="b2" data-act="adm-add" data-add="1000">+1000</button><button class="b2" data-act="adm-add" data-add="10000">+10000</button><button class="b2" data-act="adm-set0">обнулить</button><button class="b2" data-act="adm-unl">∞ вкл/выкл</button></div>
+    <div class="gh">Пользователи</div>
+    <div class="grp">${(d.users||[]).map(u=>`<div class="row"><div class="k">${u.id}${u.unlimited?" ∞":""}</div><div class="v">${u.credits}<div class="adm"><button class="b2" data-adm="${u.id}" data-add="100">+100</button><button class="b2" data-adm="${u.id}" data-add="1000">+1000</button><button class="b2" data-adm="${u.id}" data-unl="1">∞</button></div></div></div>`).join("")||'<div class="row"><div class="k">пусто</div></div>'}</div>`);
+}
+async function admSet(body, reload){
+  hap();
+  try{ await api("admin/set", body); }
+  catch(e){ toast("Не вышло: "+e.message); return }
+  if(reload){ toast("Готово"); adminSheet(); }
+  else { toast("Готово"); eco=await api("me"); renderEco(); adminSheet(); }
 }
 
 async function doClaim(){
@@ -853,8 +925,7 @@ async function doClaim(){
   catch(e){ toast(e.status===409?"Сегодня уже забрано":"Не получилось, попробуй позже"); await loadEco(); if(sheetOpen) shopSheet(false); }
 }
 async function purchase(item){
-  if(ecoState!=="ok"){ toast("Оплата работает только внутри Телеграма"); return }
-  if(!(tg&&(tg.openInvoice||tg.openTelegramLink))){ toast("Оплата работает только внутри Телеграма"); return }
+  if(ecoState!=="ok"||!(tg&&(tg.openInvoice||tg.openTelegramLink))){ toast("Оплата работает только внутри Телеграма"); return }
   hap();
   let link;
   try{ link=(await api("invoice",{item})).link; }
@@ -872,31 +943,35 @@ async function purchase(item){
         return;
       }
     }
-    renderEco(); closeSheet(); toast("Оплата прошла, доступ появится через минуту. Перезапусти приложение, если не видно.");
+    renderEco(); closeSheet(); toast("Оплата прошла, доступ появится через минуту.");
   };
   if(tg.openInvoice) tg.openInvoice(link,st=>{ if(st==="paid") done(); else if(st==="failed") toast("Платёж не прошёл"); });
   else tg.openTelegramLink(link);
 }
 
-/* визуализатор на весь экран */
+/* доска открывается в браузере отдельной вкладкой как HTML-файл */
 async function openViz(v){
   hap();
   if(!v.free){
     if(ecoState!=="ok"){ toast(ecoState==="locked"?"Открой приложение внутри Телеграма":"Магазин пока не подключён"); return }
     if(!eco.owned.includes(v.item)){ buySheet(v); return }
   }
-  showVizShell(v);
+  let html;
   try{
     const r=v.free?await fetch(v.src):await api("viz",{id:v.item},true);
     if(!r.ok) throw new Error("load");
-    let html=await r.text();
-    const imp=localStorage.getItem("sledy_import");
-    if(imp){
-      localStorage.removeItem("sledy_import");
-      html=html.replace("</body>",`<script>setTimeout(()=>window.__importBoard&&window.__importBoard(${imp}),600)<\/script></body>`);
-    }
-    mountViz(html);
-  }catch(e){ closeViz(); toast(e.status===404?"Файл визуализатора ещё не загружен на сервер":"Не удалось открыть"); }
+    html=await r.text();
+  }catch(e){ toast(e.status===404?"Файл визуализатора ещё не загружен на сервер":"Не удалось открыть"); return }
+
+  const imp=localStorage.getItem("sledy_import");
+  if(imp){
+    localStorage.removeItem("sledy_import");
+    html=html.replace("</body>",`<script>setTimeout(()=>window.__importBoard&&window.__importBoard(${imp}),600)<\/script></body>`);
+  }
+  const url=URL.createObjectURL(new Blob([html],{type:"text/html"}));
+  const w=window.open(url,"_blank");
+  if(!w){ showVizShell(v); mountViz(url); setTimeout(()=>URL.revokeObjectURL(url),300000); }
+  else setTimeout(()=>URL.revokeObjectURL(url),300000);
 }
 function showVizShell(v){
   const upsell=v.free&&ecoState==="ok"&&!eco.owned.includes("sledy")?`<button class="vbuy" data-act="upsell">Полная · ${eco.items.sledy.price} ⭐</button>`:"";
@@ -905,16 +980,14 @@ function showVizShell(v){
   tg?.BackButton?.show(); try{ tg?.disableVerticalSwipes?.() }catch(e){}
   $("#vx").onclick=closeViz;
 }
-function mountViz(html){
-  vizUrl=URL.createObjectURL(new Blob([html],{type:"text/html"}));
+function mountViz(url){
   const f=document.createElement("iframe");
   f.allow="camera; microphone; clipboard-read; clipboard-write; fullscreen";
-  f.setAttribute("allowfullscreen",""); f.src=vizUrl;
+  f.setAttribute("allowfullscreen",""); f.src=url;
   const b=$("#viz .vbody"); if(b){ b.innerHTML=""; b.appendChild(f); }
 }
 function closeViz(){
   $("#viz").classList.add("hide"); $("#viz").innerHTML="";
-  if(vizUrl){ URL.revokeObjectURL(vizUrl); vizUrl=null }
   vizOpen=false; document.body.style.overflow="";
   try{ tg?.enableVerticalSwipes?.() }catch(e){}
   if($("#tool").classList.contains("hide")&&!sheetOpen) tg?.BackButton?.hide();
@@ -930,6 +1003,23 @@ document.addEventListener("click",e=>{
     else if(act==="buy") purchase(a.dataset.item);
     else if(act==="demo"){ closeSheet(); openViz(VIZ.find(x=>x.free)); }
     else if(act==="upsell"){ closeViz(); buySheet(VIZ.find(x=>!x.free)); }
+    else if(act==="admin") adminSheet();
+    else if(act==="adm-self"){ api("admin/self").then(()=>loadEco()).then(()=>toast("Готово")).catch(()=>toast("Ошибка")); }
+    else if(act==="adm-own"){ admSet({ id:eco.id, owned:1 }, false); }
+    else if(act==="adm-add"||act==="adm-set0"||act==="adm-unl"){
+      const id=+($("#admid")?.value||0);
+      if(!id){ toast("Введи ID"); return }
+      if(act==="adm-add") admSet({ id, add:+a.dataset.add }, false);
+      else if(act==="adm-set0") admSet({ id, credits:0 }, false);
+      else admSet({ id, unlimited:1 }, false);
+    }
+    return;
+  }
+  const au=e.target.closest("[data-adm]");
+  if(au){
+    const id=+au.dataset.adm;
+    if(au.dataset.unl) admSet({ id, unlimited:1 }, false);
+    else admSet({ id, add:+au.dataset.add }, false);
     return;
   }
   if(e.target.id==="shade"){ closeSheet(); return }
