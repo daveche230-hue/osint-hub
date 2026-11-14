@@ -1,6 +1,7 @@
 import { auth, isOwner } from "../../lib/guard.js";
 
 const DAILY = 5;
+const TTL = 2592000; /* 30 дней */
 const ITEMS = {
 sledy: { type: "viz", title: "Следы: полная версия", desc: "Доска расследований: карточки, связи, 2D и 3D граф без ограничений.", price: 250, kv: "viz:sledy" },
 pack_20: { type: "pack", title: "20 запросов", desc: "Пакет из 20 запросов к инструментам.", requests: 20, price: 30 },
@@ -46,6 +47,62 @@ const claimable = u.day !== t;
 const next = Math.max(0, Math.floor((Date.parse(t + "T00:00:00Z") + 86400000 - Date.now()) / 1000));
 const owned = Object.keys(ITEMS).filter((k) => ITEMS[k].type === "viz" && owns(env, u, k));
 return { id: u.id, requests: u.credits, unlimited: !!u.unlimited, admin: isOwner(env, u.id), canClaim: claimable, nextClaimSec: claimable ? 0 : next, owned, daily: DAILY, items: publicItems() };
+}
+
+/* ---- выдача доски по долгой ссылке ---- */
+async function vizOpen(url, env) {
+const t = url.searchParams.get("t");
+if (!t) return new Response("Нет токена", { status: 400 });
+const raw = await env.DB.get("vt:" + t);
+if (!raw) return new Response("Ссылка недействительна. Открой доску заново.", { status: 404 });
+const { id, board } = JSON.parse(raw);
+
+let html = null;
+if (id === "lite") {
+const a = await env.ASSETS.fetch(new URL("/viz/sledy-lite.html", url));
+if (a.ok) html = await a.text();
+} else if (ITEMS[id] && ITEMS[id].kv) {
+html = await env.DB.get(ITEMS[id].kv);
+}
+if (!html) return new Response("Файл визуализатора не загружен", { status: 404 });
+
+if (board) {
+html = html.replace("</body>", `<script>setTimeout(()=>window.__importBoard&&window.__importBoard(${JSON.stringify(board)}),600)<\/script></body>`);
+}
+return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+}
+
+async function vizToken(env, me, body) {
+const id = String(body.id || "lite");
+if (id !== "lite") {
+const it = ITEMS[id];
+if (!it || it.type !== "viz") return json({ error: "unknown" }, 400);
+const u = await getUser(env, me.id);
+if (!owns(env, u, id)) return json({ error: "locked" }, 403);
+}
+
+const mkey = `vtm:${me.id}:${id}`;
+let t = await env.DB.get(mkey);
+if (!t) {
+t = crypto.randomUUID().replace(/-/g, "");
+await env.DB.put(mkey, t, { expirationTtl: TTL });
+}
+await env.DB.put(`vt:${t}`, JSON.stringify({ id, uid: me.id, board: body.board || null }), { expirationTtl: TTL });
+await env.DB.put(`vtu:${me.id}:${t}`, "1", { expirationTtl: TTL });
+return json({ token: t });
+}
+
+async function vizRevoke(env, uid) {
+const keys = [];
+const a = await env.DB.list({ prefix: `vtu:${uid}:` });
+for (const k of a.keys || []) {
+const t = k.name.slice(`vtu:${uid}:`.length);
+keys.push(k.name, "vt:" + t);
+}
+const b = await env.DB.list({ prefix: `vtm:${uid}:` });
+for (const k of b.keys || []) keys.push(k.name);
+for (const k of keys) await env.DB.delete(k);
+return keys.length;
 }
 
 async function webhook(request, env) {
@@ -116,8 +173,11 @@ return json({ ok: true });
 export async function onRequest({ request, env }) {
 const url = new URL(request.url);
 const path = url.pathname.replace(/^\/api\/?/, "").replace(/\/$/, "");
-if (request.method !== "POST") return json({ error: "method" }, 405);
 if (!env.BOT_TOKEN || !env.DB || !env.DB1) return json({ error: "not configured" }, 503);
+
+if (path === "viz-open" && request.method === "GET") return vizOpen(url, env);
+
+if (request.method !== "POST") return json({ error: "method" }, 405);
 if (path === "webhook") return webhook(request, env);
 
 const me = await auth(request, env);
@@ -168,9 +228,27 @@ if (!html) return json({ error: "not uploaded" }, 404);
 return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 }
 
+if (path === "viz-token") return vizToken(env, me, body);
+
 /* ---- админка ---- */
 if (path.startsWith("admin")) {
 if (!isOwner(env, me.id)) return json({ error: "forbidden" }, 403);
+
+if (path === "admin/find") {
+const un = String(body.username || "").replace(/^@/, "").trim();
+if (!un) return json({ error: "нет юзернейма" }, 400);
+let r;
+try { r = await tgApi(env, "getChat", { chat_id: "@" + un }); }
+catch (e) { return json({ error: e.message || "не найден" }, 404); }
+const id = r.result && r.result.id;
+if (!id) return json({ error: "не найден" }, 404);
+await env.DB1.prepare("INSERT OR IGNORE INTO users (id, credits) VALUES (?, 0)").bind(id).run();
+if (body.unlimited != null)
+await env.DB1.prepare("UPDATE users SET unlimited = ? WHERE id = ?").bind(body.unlimited ? 1 : 0, id).run();
+if (body.add)
+await env.DB1.prepare("UPDATE users SET credits = credits + ? WHERE id = ?").bind(Number(body.add) | 0, id).run();
+return json({ ok: true, id, name: ((r.result.first_name || "") + " " + (r.result.last_name || "")).trim(), username: r.result.username || un });
+}
 
 if (path === "admin/users") {
 const rows = await env.DB1
@@ -186,18 +264,14 @@ if (path === "admin/set") {
 const id = Number(body.id);
 if (!id) return json({ error: "bad id" }, 400);
 await env.DB1.prepare("INSERT OR IGNORE INTO users (id, credits) VALUES (?, 0)").bind(id).run();
-if (body.credits != null) {
+if (body.credits != null)
 await env.DB1.prepare("UPDATE users SET credits = ? WHERE id = ?").bind(Math.max(0, Number(body.credits) | 0), id).run();
-}
-if (body.add) {
+if (body.add)
 await env.DB1.prepare("UPDATE users SET credits = credits + ? WHERE id = ?").bind(Number(body.add) | 0, id).run();
-}
-if (body.unlimited != null) {
+if (body.unlimited != null)
 await env.DB1.prepare("UPDATE users SET unlimited = ? WHERE id = ?").bind(body.unlimited ? 1 : 0, id).run();
-}
-if (body.owned) {
+if (body.owned)
 await env.DB1.prepare("UPDATE users SET owned = ? WHERE id = ?").bind(JSON.stringify({ sledy: Date.now() }), id).run();
-}
 const row = await env.DB1.prepare("SELECT id, credits, unlimited FROM users WHERE id = ?").bind(id).first();
 return json({ ok: true, user: row });
 }
@@ -205,6 +279,12 @@ return json({ ok: true, user: row });
 if (path === "admin/self") {
 await env.DB1.prepare("UPDATE users SET unlimited = 1 WHERE id = ?").bind(me.id).run();
 return json(view(env, await getUser(env, me.id)));
+}
+
+if (path === "admin/revoke") {
+const id = Number(body.id) || me.id;
+const n = await vizRevoke(env, id);
+return json({ ok: true, killed: n });
 }
 
 return json({ error: "unknown admin route" }, 404);
