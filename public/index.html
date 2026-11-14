@@ -295,12 +295,10 @@ const cpb = t => `<button class="b2" data-copy="${esc(t)}">Скопироват�
 const rnd = n => Array.from(crypto.getRandomValues(new Uint32Array(n))).map(x=>x%10).join("");
 const innC=(d,w)=>d.reduce((a,x,i)=>a+x*w[i],0)%11%10;
 
-/* ---------- валидаторы документов ---------- */
 const innOk = s => {
   if(!/^\d{10}$/.test(s) && !/^\d{12}$/.test(s)) return false;
   const d=[...s].map(Number);
-  const w10=[2,4,10,3,5,9,4,6,8];
-  const c1=innC(d.slice(0,9),w10);
+  const c1=innC(d.slice(0,9),[2,4,10,3,5,9,4,6,8]);
   if(s.length===10) return c1===d[9];
   const c11=innC(d.slice(0,10),[7,2,4,10,3,5,9,4,6,8]);
   const c12=innC(d.slice(0,11),[3,7,2,4,10,3,5,9,4,6,8]);
@@ -335,7 +333,6 @@ const vinOk = s => {
   return (r===10?"X":String(r)) === u[8];
 };
 const kppOk = s => /^\d{4}[0-9A-Z]{2}\d{3}$/.test(s);
-
 const luhnAdd = s => { for(let k=0;k<10;k++){ const t=s+k; if(luhnOk(t)) return t } return s+"0" };
 
 const T=[
@@ -583,11 +580,10 @@ const T=[
   if(/^\d{9}$/.test(s)) out.push(["КПП",kppOk(s)]);
   if(/^\d{12,19}$/.test(d)) out.push(["номер карты (Луна)",luhnOk(d)]);
   if(/^[A-HJ-NPR-Z0-9]{17}$/.test(s)) out.push(["VIN",vinOk(s)]);
-  if(/^\d{10}$/.test(d.slice(0,10)) && d.length===10) out.push(["паспорт РФ (формат)",true]);
   if(!out.length) throw new Error("Не понял тип. Подойдут ИНН, ОГРН, ОГРНИП, СНИЛС, КПП, карта или VIN");
   const okAll=out.every(([,x])=>x);
   return `<h3>Результат</h3>`+rows(out.map(([n,x])=>[n,x?"верно":"неверно",x?"ok":"er"]))
-  +`<div class="note">${okAll?"Контрольные разряды сходятся.":"Контрольные разряды не сходятся — номер битый или выдуман."}${out.some(([n])=>n.startsWith("ИНН"))?"<br>ИНН по 10 знакам — организация, по 12 — человек.":""}</div>`
+  +`<div class="note">${okAll?"Контрольные разряды сходятся.":"Контрольные разряды не сходятся — номер битый или выдуман."}</div>`
   +`<h3>Проверить в реестрах</h3>`+links([["ЕГРЮЛ / ЕГРИП","https://egrul.nalog.ru/"],["Checko","https://checko.ru/search?query="+encodeURIComponent(s)],["Rusprofile","https://www.rusprofile.ru/search?query="+encodeURIComponent(s)],["Суды","https://sudact.ru/regular/doc/?q="+encodeURIComponent(s)]]);
 }},
 {c:"doc",n:"Генератор номеров",d:"Валидные ИНН, ОГРН, СНИЛС, карта, VIN",p:null,f:async()=>{
@@ -597,10 +593,10 @@ const T=[
   const ogrnip=()=>{const b=rnd(14);return b+String((BigInt(b)%13n)%10n)};
   const snils=()=>{const b=rnd(9);const d=[...b].map(Number);let sum=0;for(let i=0;i<9;i++)sum+=d[i]*(9-i);let c=sum<100?sum:(sum===100||sum===101?0:sum%101);if(c===100||c===101)c=0;return b+String(c).padStart(2,"0")};
   const card=()=>luhnAdd("4276"+rnd(11));
-  const vin=()=>{const A="ABCDEFGHJKLMNPRSTUVWXYZ0123456789";let s=Array.from(crypto.getRandomValues(new Uint32Array(17))).map(x=>A[x%A.length]).join("");let u=s.slice(0,8)+"0"+s.slice(9);let sum=0;for(let i=0;i<17;i++){const c=u[i];sum+=(/\d/.test(c)?+c:VM[c])*VW[i]}const r=sum%11;s=u.slice(0,8)+(r===10?"X":String(r))+u.slice(9);return s};
+  const vin=()=>{const A="ABCDEFGHJKLMNPRSTUVWXYZ0123456789";let s=Array.from(crypto.getRandomValues(new Uint32Array(17))).map(x=>A[x%A.length]).join("");let u=s.slice(0,8)+"0"+s.slice(9);let sum=0;for(let i=0;i<17;i++){const c=u[i];sum+=(/\d/.test(c)?+c:VM[c])*VW[i]}const r=sum%11;return u.slice(0,8)+(r===10?"X":String(r))+u.slice(9)};
   const list=[["ИНН 10 (организация)",inn10()],["ИНН 12 (человек)",inn12()],["ОГРН",ogrn()],["ОГРНИП",ogrnip()],["СНИЛС",snils()],["карта Visa",card()],["VIN",vin()]];
   const t=list.map(([n,x])=>n+": "+x).join("\n");
-  return rows(list.map(([n,x])=>[n,esc(x),innOk(x)||ogrnOk(x)||snilsOk(x)||luhnOk(x)||vinOk(x)?"ok":""]))+cpb(t);
+  return rows(list.map(([n,x])=>[n,esc(x)]))+cpb(t);
 }},
 {c:"code",n:"Base64",d:"Кодирование и декодирование",p:"текст",f:async v=>{
   if(!v)throw new Error("Введи текст");
@@ -640,12 +636,12 @@ const T=[
   const s=v.trim();if(!s)throw new Error("Вставь строку User-Agent");
   const f=(re,d="—")=>{const m=s.match(re);return m?(m[1]||m[0]):d};
   const bot=/bot|crawler|spider|curl|wget|python|java\/|okhttp|headless/i.test(s);
-  const br=f(/(Edg|Edge|OPR|Opera|YaBrowser|SamsungBrowser|Firefox|FxiOS|CriOS|Chrome|Safari)\/([\d.]+)/);
+  const br=f(/(Edg|Edge|OPR|Opera|YaBrowser|SamsungBrowser|Firefox|FxiOS|CriOS|Chrome|Safari)\//);
   const ver=f(/(?:Edg|Edge|OPR|Opera|YaBrowser|SamsungBrowser|Firefox|FxiOS|CriOS|Chrome|Safari)\/([\d.]+)/);
   const os=/Windows NT 10/.test(s)?"Windows 10/11":/Windows NT 6\.3/.test(s)?"Windows 8.1":/Windows/.test(s)?"Windows":/Android ([\d.]+)/.test(s)?"Android "+f(/Android ([\d.]+)/):/iPhone|iPad/.test(s)?"iOS "+f(/OS ([\d_]+)/,"").replace(/_/g,"."):/Mac OS X/.test(s)?"macOS":/Linux/.test(s)?"Linux":"—";
   const dev=/iPhone/.test(s)?"iPhone":/iPad/.test(s)?"iPad":/Android/.test(s)?"Android-устройство":/Mobile/.test(s)?"мобильный":/Tablet/.test(s)?"планшет":"компьютер";
   return rows([["браузер",esc(br)],["версия",esc(ver)],["система",esc(os)],["устройство",esc(dev)],["бот",bot?"да":"нет",bot?"er":"ok"],["длина",String(s.length)]])
-  +`<div class="note">UA легко подделать: он говорит, чем клиент представился, а не чем является на самом деле.</div>`;
+  +`<div class="note">UA легко подделать: он говорит, чем клиент представился, а не чем является.</div>`;
 }},
 {c:"util",n:"Хеши текста",d:"MD5, SHA-1, SHA-256, SHA-512",p:"текст",f:async v=>{
   if(!v)throw new Error("Введи текст");
@@ -852,6 +848,9 @@ async function loadEco(){
 }
 function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("on"),2800); }
 
+const pl=(n,a)=>{const m=n%10,h=n%100;return n+" "+(m===1&&h!==11?a[0]:(m>=2&&m<=4&&(h<12||h>14))?a[1]:a[2])};
+const fmtT=sec=>{const h=Math.floor(sec/3600),m=Math.max(1,Math.floor(sec%3600/60));return h?h+" ч "+m+" мин":m+" мин"};
+
 function renderWallet(){
   const w=$("#wlt");
   if(ecoState!=="ok"){ w.innerHTML=""; return }
@@ -905,11 +904,12 @@ async function adminSheet(){
     <div class="bal"><b>${st.users||0}</b><span>пользователей · ${st.jobs||0} задач · ${st.ops||0} операций</span></div>
     <div class="gh">Себе</div>
     <div class="adm"><button class="b2" data-act="adm-self">∞ бесконечно</button><button class="b2" data-act="adm-own">открыть «Следы»</button></div>
-    <div class="gh">Выдать по ID</div>
-    <input class="f" id="admid" placeholder="Telegram ID" inputmode="numeric">
-    <div class="adm"><button class="b2" data-act="adm-add" data-add="100">+100</button><button class="b2" data-act="adm-add" data-add="1000">+1000</button><button class="b2" data-act="adm-add" data-add="10000">+10000</button><button class="b2" data-act="adm-set0">обнулить</button><button class="b2" data-act="adm-unl">∞ вкл/выкл</button></div>
+    <div class="gh">Выдать по @юзернейму</div>
+    <input class="f" id="admuser" placeholder="@username" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="adm"><button class="b2" data-act="adm-unl-user">∞ без лимита</button><button class="b2" data-act="adm-add-user" data-add="1000">+1000 запросов</button><button class="b2" data-act="adm-revoke">сбросить ссылки</button></div>
+    <p class="fine">Человек должен хоть раз нажать /start у бота, иначе Телеграм не отдаст его ID.</p>
     <div class="gh">Пользователи</div>
-    <div class="grp">${(d.users||[]).map(u=>`<div class="row"><div class="k">${u.id}${u.unlimited?" ∞":""}</div><div class="v">${u.credits}<div class="adm"><button class="b2" data-adm="${u.id}" data-add="100">+100</button><button class="b2" data-adm="${u.id}" data-add="1000">+1000</button><button class="b2" data-adm="${u.id}" data-unl="1">∞</button></div></div></div>`).join("")||'<div class="row"><div class="k">пусто</div></div>'}</div>`);
+    <div class="grp">${(d.users||[]).map(u=>`<div class="row"><div class="k">${u.id}${u.unlimited?" ∞":""}</div><div class="v">${u.credits}<div class="adm"><button class="b2" data-adm="${u.id}" data-add="100">+100</button><button class="b2" data-adm="${u.id}" data-add="1000">+1000</button><button class="b2" data-adm="${u.id}" data-unl="${u.unlimited?0:1}">${u.unlimited?"∞ выкл":"∞ вкл"}</button></div></div></div>`).join("")||'<div class="row"><div class="k">пусто</div></div>'}</div>`);
 }
 async function admSet(body, reload){
   hap();
@@ -949,29 +949,23 @@ async function purchase(item){
   else tg.openTelegramLink(link);
 }
 
-/* доска открывается в браузере отдельной вкладкой как HTML-файл */
-async function openViz(v){
+/* доска открывается в браузере страницей-обёрткой, файл не отдаётся */
+async function openViz(v, board){
   hap();
   if(!v.free){
     if(ecoState!=="ok"){ toast(ecoState==="locked"?"Открой приложение внутри Телеграма":"Магазин пока не подключён"); return }
     if(!eco.owned.includes(v.item)){ buySheet(v); return }
   }
-  let html;
+  let url;
   try{
-    const r=v.free?await fetch(v.src):await api("viz",{id:v.item},true);
-    if(!r.ok) throw new Error("load");
-    html=await r.text();
-  }catch(e){ toast(e.status===404?"Файл визуализатора ещё не загружен на сервер":"Не удалось открыть"); return }
+    const r=await api("viz-token",{ id:v.free?"lite":v.item, board:board||null });
+    url=location.origin+"/view.html?t="+r.token;
+  }catch(e){ toast(e.status===404?"Файл визуализатора не загружен":"Не удалось открыть"); return }
 
-  const imp=localStorage.getItem("sledy_import");
-  if(imp){
-    localStorage.removeItem("sledy_import");
-    html=html.replace("</body>",`<script>setTimeout(()=>window.__importBoard&&window.__importBoard(${imp}),600)<\/script></body>`);
-  }
-  const url=URL.createObjectURL(new Blob([html],{type:"text/html"}));
-  const w=window.open(url,"_blank");
-  if(!w){ showVizShell(v); mountViz(url); setTimeout(()=>URL.revokeObjectURL(url),300000); }
-  else setTimeout(()=>URL.revokeObjectURL(url),300000);
+  openSheet(`<h2>${esc(v.title)}</h2><p class="sp1">Откроется в браузере. Ссылка живёт 30 дней, доска грузится заново при каждом открытии.</p>
+    <a class="run" href="${esc(url)}" target="_blank" rel="noopener" style="display:grid;place-items:center;text-decoration:none">Открыть</a>
+    <p class="fine">В адресной строке страница-обёртка, а не HTML-файл — просто так сохранить доску не выйдет.</p>`);
+  try{ tg?.openLink?.(url); }catch(e){}
 }
 function showVizShell(v){
   const upsell=v.free&&ecoState==="ok"&&!eco.owned.includes("sledy")?`<button class="vbuy" data-act="upsell">Полная · ${eco.items.sledy.price} ⭐</button>`:"";
@@ -1006,19 +1000,26 @@ document.addEventListener("click",e=>{
     else if(act==="admin") adminSheet();
     else if(act==="adm-self"){ api("admin/self").then(()=>loadEco()).then(()=>toast("Готово")).catch(()=>toast("Ошибка")); }
     else if(act==="adm-own"){ admSet({ id:eco.id, owned:1 }, false); }
-    else if(act==="adm-add"||act==="adm-set0"||act==="adm-unl"){
-      const id=+($("#admid")?.value||0);
-      if(!id){ toast("Введи ID"); return }
-      if(act==="adm-add") admSet({ id, add:+a.dataset.add }, false);
-      else if(act==="adm-set0") admSet({ id, credits:0 }, false);
-      else admSet({ id, unlimited:1 }, false);
+    else if(act==="adm-unl-user"||act==="adm-add-user"){
+      const q=($("#admuser")?.value||"").trim().replace(/^@/,"");
+      if(!q){ toast("Введи @юзернейм"); return }
+      const body={ username:q };
+      if(act==="adm-unl-user") body.unlimited=1; else body.add=+a.dataset.add;
+      try{ const r=await api("admin/find",body); toast("Готово: "+r.id+" "+r.name); adminSheet(); }
+      catch(e){ toast("Не найден. Пусть нажмёт /start у бота"); }
+    }
+    else if(act==="adm-revoke"){
+      const q=($("#admuser")?.value||"").trim().replace(/^@/,"");
+      if(!q){ toast("Введи @юзернейм"); return }
+      try{ const r=await api("admin/find",{ username:q }); const k=await api("admin/revoke",{ id:r.id }); toast("Ссылок сброшено: "+k.killed); }
+      catch(e){ toast("Не вышло"); }
     }
     return;
   }
   const au=e.target.closest("[data-adm]");
   if(au){
     const id=+au.dataset.adm;
-    if(au.dataset.unl) admSet({ id, unlimited:1 }, false);
+    if(au.dataset.unl!=null) admSet({ id, unlimited:+au.dataset.unl }, false);
     else admSet({ id, add:+au.dataset.add }, false);
     return;
   }
