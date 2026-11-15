@@ -195,6 +195,11 @@ export async function onRequest({ request, env }) {
 
   if (path === "viz-open" && request.method === "GET") return vizOpen(url, env);
 
+  if (path === "stats" && request.method === "GET") {
+    const r = await env.DB1.prepare("SELECT COUNT(*) AS n FROM users").first();
+    return json({ users: (r && r.n) || 0 });
+  }
+
   if (request.method !== "POST") return json({ error: "method" }, 405);
   if (path === "webhook") return webhook(request, env);
 
@@ -273,7 +278,7 @@ export async function onRequest({ request, env }) {
         .prepare("SELECT id, credits, unlimited, day, created_at FROM users ORDER BY created_at DESC LIMIT 200")
         .all();
       const stat = await env.DB1
-        .prepare("SELECT (SELECT COUNT(*) FROM users) AS users, (SELECT COUNT(*) FROM jobs) AS jobs, (SELECT COUNT(*) FROM ledger) AS ops")
+        .prepare("SELECT (SELECT COUNT(*) FROM users) AS users, (SELECT COUNT(*) FROM users WHERE unlimited = 1) AS unl, (SELECT COUNT(*) FROM jobs) AS jobs, (SELECT COUNT(*) FROM ledger) AS ops")
         .first();
       const kl = await env.DB.list({ prefix: "viz:" });
       return json({ users: rows.results || [], stat, viz: (kl.keys || []).map((k) => k.name) });
