@@ -928,8 +928,23 @@ async function openAdmin(){
     <button class="b2" data-act="adm" data-do="rev">Сбросить ссылки</button>
     <button class="b2" data-act="adm" data-do="self">Мне безлимит</button>
   </div>
+  <div class="gh">Файл полной версии «Следы»</div>
+  <div class="note" style="margin:0 0 8px">${(d.viz||[]).includes("viz:sledy")?"Загружен. Можно заменить новым файлом.":"Пока не загружен: покупатели увидят ошибку."}</div>
+  <input type="file" id="vzf" accept=".html,text/html" class="f" style="height:auto;padding:12px">
+  <button class="b2 wide" data-act="vzup">Загрузить файл</button>
   <div class="gh">Последние пользователи</div>
   <div class="grp">${(d.users||[]).slice(0,30).map(u=>`<div class="row"><div class="k">${esc(u.id)}</div><div class="v">${u.unlimited?"∞":esc(u.credits)}</div></div>`).join("")}</div>`);
+}
+async function vzup(){
+  const f=$("#vzf")?.files?.[0];
+  if(!f){ toast("Сначала выбери файл .html"); return }
+  toast("Загружаю…");
+  try{
+    const html=await f.text();
+    const r=await api("admin/viz-upload",{id:"sledy",html});
+    toast("Загружено: "+Math.round(r.size/1024)+" КБ");
+    openAdmin();
+  }catch(e){ toast(e.message) }
 }
 async function adm(a){
   try{
@@ -975,6 +990,7 @@ document.addEventListener("click",async e=>{
   else if(k==="viz") await openViz(a.dataset.id);
   else if(k==="admin") await openAdmin();
   else if(k==="adm") await adm(a.dataset.do);
+  else if(k==="vzup") await vzup();
 });
 $("#q").addEventListener("input",()=>{ sugg(); render(false) });
 $("#q").addEventListener("keydown",e=>{
