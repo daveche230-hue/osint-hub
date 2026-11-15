@@ -853,18 +853,19 @@ async function loadMe(){
   paint();
 }
 function paint(){
-  if(!me){ $("#adw").innerHTML=""; $("#vzw").innerHTML=""; return }
-  const bal=me.unlimited?"∞":me.requests;
-  $("#wlt").innerHTML=`<button class="wallet" data-act="shop"><span class="ico">${I.bolt}</span><div class="wt"><b>${bal} запросов</b><span>ID ${esc(me.id)}</span></div><span class="wb ${me.canClaim?"hot":""}">${me.canClaim?"+"+me.daily+" бесплатно":"Магазин"}</span></button>`;
-  $("#adw").innerHTML=me.admin?`<button class="b2" data-act="admin" style="margin-top:10px">Админка</button>`:"";
   const card=(id,title,d,hue,pill)=>`<button class="vz" data-act="viz" data-id="${id}" style="--h:${hue}"><span class="ico" style="--h:${hue}">${I.graph}</span><div class="tx"><div class="cn">${esc(title)}</div><div class="vd">${esc(d)}</div></div>${pill}</button>`;
+  const items=(me&&me.items)||{sledy:{type:"viz",title:"Следы: полная версия",price:250}};
   let h="";
-  Object.entries(me.items||{}).filter(([,x])=>x.type==="viz").forEach(([id,x])=>{
-    const own=(me.owned||[]).includes(id), m=VIZ[id]||{};
+  Object.entries(items).filter(([,x])=>x.type==="viz").forEach(([id,x])=>{
+    const own=!!me&&(me.owned||[]).includes(id), m=VIZ[id]||{};
     h+=card(id,x.title,m.d||"",m.h||"#8ea2ff",own?`<span class="pill ok">Открыть</span>`:`<span class="pill gold">${x.price} ★</span>`);
   });
   h+=card("lite",VIZ.lite.title,VIZ.lite.d,VIZ.lite.h,`<span class="pill">Демо</span>`);
   $("#vzw").innerHTML=h;
+  if(!me){ $("#adw").innerHTML=""; return }
+  const bal=me.unlimited?"∞":me.requests;
+  $("#wlt").innerHTML=`<button class="wallet" data-act="shop"><span class="ico">${I.bolt}</span><div class="wt"><b>${bal} запросов</b><span>ID ${esc(me.id)}</span></div><span class="wb ${me.canClaim?"hot":""}">${me.canClaim?"+"+me.daily+" бесплатно":"Магазин"}</span></button>`;
+  $("#adw").innerHTML=me.admin?`<button class="b2" data-act="admin" style="margin-top:10px">Админка</button>`:"";
 }
 
 function openShop(){
@@ -906,7 +907,7 @@ async function openViz(id){
   closeSheet(); toast("Открываю…");
   try{
     const r=await api("viz-token",{id});
-    openUrl(location.origin+"/view.html?t="+encodeURIComponent(r.token));
+    openUrl(location.origin+"/api/viz-open?t="+encodeURIComponent(r.token));
   }catch(e){ if(e.status===403) vizSheet(id); else toast(e.message) }
 }
 
