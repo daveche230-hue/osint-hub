@@ -12,6 +12,15 @@ const ITEMS = {
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" } });
 
+const page = (text, status) =>
+  new Response(
+    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;background:#0a0c11;color:#8593a3;font:15px/1.5 system-ui;padding:60px 24px;text-align:center"><b style="color:#eef2f6;display:block;font-size:17px;margin-bottom:8px">Не открылось</b>${text}`,
+    { status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } }
+  );
+
+/* главная страница хаба не должна выдаваться за визуализатор */
+const isHub = (s) => /<title>\s*OSINT Hub\s*<\/title>/i.test(String(s).slice(0, 4000));
+
 async function tgApi(env, method, body) {
   const r = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/${method}`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -52,19 +61,28 @@ function view(env, u) {
 /* ---- выдача доски по короткой ссылке ---- */
 async function vizOpen(url, env) {
   const t = url.searchParams.get("t");
-  if (!t || !/^[a-f0-9]{32}$/.test(t)) return new Response("Нет токена", { status: 400 });
+  if (!t || !/^[a-f0-9]{32}$/.test(t)) return page("Нет токена. Открой доску заново из приложения.", 400);
   const raw = await env.DB.get("vt:" + t);
-  if (!raw) return new Response("Ссылка недействительна. Открой доску заново.", { status: 404 });
+  if (!raw) return page("Ссылка недействительна или устарела. Открой доску заново из приложения.", 404);
   const { id, uid, board } = JSON.parse(raw);
 
   let html = null;
+  let where = "";
   if (id === "lite") {
-    const a = await env.ASSETS.fetch(new URL("/viz/sledy-lite.html", url));
-    if (a.ok) html = await a.text();
+    where = "демо: положи файл в public/viz/sledy-lite.html";
+    try {
+      const a = await env.ASSETS.fetch(new Request(new URL("/viz/sledy-lite.html", url), { redirect: "follow" }));
+      if (a.ok) {
+        const txt = await a.text();
+        if (!isHub(txt) && txt.length > 500) html = txt;
+      }
+    } catch (e) {}
   } else if (ITEMS[id] && ITEMS[id].kv) {
-    html = await env.DB.get(ITEMS[id].kv);
+    where = "полная версия: загрузи файл в KV по ключу " + ITEMS[id].kv;
+    const txt = await env.DB.get(ITEMS[id].kv);
+    if (txt && !isHub(txt)) html = txt;
   }
-  if (!html) return new Response("Файл визуализатора не загружен", { status: 404 });
+  if (!html) return page("Файл визуализатора не найден (" + where + ").", 404);
 
   /* водяной знак с ID покупателя и импорт доски */
   let extra = `<div style="position:fixed;right:8px;bottom:6px;font:10px monospace;opacity:.3;pointer-events:none;z-index:2147483647">ID ${Number(uid)}</div>`;
@@ -74,7 +92,7 @@ async function vizOpen(url, env) {
   const i = html.lastIndexOf("</body>");
   html = i < 0 ? html + extra : html.slice(0, i) + extra + html.slice(i);
 
-  return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+  return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex", "Referrer-Policy": "no-referrer" } });
 }
 
 async function vizToken(env, me, body) {
