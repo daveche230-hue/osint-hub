@@ -1,4 +1,5 @@
 import { auth, isOwner } from "../../lib/guard.js";
+import { analyze, analyzeFile, HELP } from "../../lib/check.js";
 
 const DAILY = 5;
 const TTL = 600; /* ссылка на доску живёт 10 минут */
@@ -123,7 +124,77 @@ async function vizRevoke(env, uid) {
   return keys.length;
 }
 
-async function webhook(request, env) {
+
+/* ---- автоматизация чатов (Telegram Business) и команда /check ---- */
+const CMD = /^\/(check|chek|c|чек)(?:@\w+)?(?:\s+([\s\S]+))?$/i;
+
+async function bizConn(env, id) {
+  const raw = await env.DB.get("bc:" + id);
+  if (raw) return JSON.parse(raw);
+  try {
+    const r = (await tgApi(env, "getBusinessConnection", { business_connection_id: id })).result;
+    const c = { uid: r.user.id, chat: r.user_chat_id, enabled: r.is_enabled !== false, can_reply: r.rights ? r.rights.can_reply !== false : r.can_reply !== false };
+    await env.DB.put("bc:" + id, JSON.stringify(c), { expirationTtl: 7776000 });
+    return c;
+  } catch (e) { return null; }
+}
+
+async function handleCheck(env, m, bcid) {
+  const cm = (m.text || m.caption || "").trim().match(CMD);
+  if (!cm || !m.from) return;
+  let owner = m.from.id;
+  if (bcid) {
+    const conn = await bizConn(env, bcid);
+    /* в личном чате команды принимаются только от владельца аккаунта, не от собеседника */
+    if (!conn || !conn.enabled || conn.can_reply === false || String(conn.uid) !== String(m.from.id)) return;
+    owner = conn.uid;
+  }
+  const biz = bcid ? { business_connection_id: bcid } : {};
+  const send = (text, extra) => tgApi(env, "sendMessage", { chat_id: m.chat.id, text, parse_mode: "HTML", link_preview_options: { is_disabled: true }, ...biz, ...(extra || {}) });
+  /* служебные ответы владельцу уходят ему лично, чтобы не засорять чат с собеседником */
+  const privately = async (text) => { try { await tgApi(env, "sendMessage", { chat_id: owner, text, parse_mode: "HTML" }); } catch (e) { if (!bcid) try { await send(text); } catch (e2) {} } };
+
+  const u = await getUser(env, owner);
+  const free = u.unlimited || isOwner(env, owner);
+  if (!free && u.credits < 1) return privately("Запросы закончились. Открой приложение: там можно забрать бесплатные на сегодня или купить пакет.");
+
+  const rp = m.reply_to_message;
+  const arg = (cm[2] || "").trim();
+  let text = arg;
+  const src = rp || null;
+  if (!text && src) {
+    text = (src.text || src.caption || "");
+    for (const e of [...(src.entities || []), ...(src.caption_entities || [])]) if (e.type === "text_link" && e.url) text += "\n" + e.url;
+  }
+  const doc = !arg && ((src && src.document) || m.document);
+  const photo = !arg && !doc && ((src && src.photo) || m.photo);
+
+  try { await tgApi(env, "sendChatAction", { chat_id: m.chat.id, action: "typing", ...biz }); } catch (e) {}
+
+  let out = null;
+  try {
+    if (doc) {
+      if (doc.file_size && doc.file_size > 20 * 1024 * 1024) return privately("Файл больше 20 МБ, Telegram не отдаёт такие боту.");
+      const f = (await tgApi(env, "getFile", { file_id: doc.file_id })).result;
+      const r = await fetch(`https://api.telegram.org/file/bot${env.BOT_TOKEN}/${f.file_path}`);
+      if (!r.ok) return privately("Не удалось скачать файл.");
+      out = await analyzeFile(await r.arrayBuffer(), doc.file_name || "");
+    } else {
+      out = await analyze(text);
+      if (!out && photo) return privately("Фото в Telegram сжато, метаданные в нём стёрты. Отправь снимок «как файл», и я прочитаю EXIF.");
+    }
+  } catch (e) { return privately("Ошибка проверки: " + String((e && e.message) || e).slice(0, 200)); }
+
+  if (!out) return privately(text ? "Не нашёл, что тут проверять." : HELP);
+
+  const to = rp ? rp.message_id : m.message_id;
+  try { await send(out, { reply_parameters: { message_id: to } }); }
+  catch (e) { try { await send(out); } catch (e2) { return privately("Не удалось отправить ответ в чат: " + String((e2 && e2.message) || e2).slice(0, 150)); } }
+
+  if (!free) await env.DB1.prepare("UPDATE users SET credits = credits - 1 WHERE id = ? AND credits >= 1").bind(owner).run();
+}
+
+async function webhook(request, env, waitUntil) {
   if (!env.WEBHOOK_SECRET || request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.WEBHOOK_SECRET)
     return json({ error: "forbidden" }, 403);
 
@@ -144,6 +215,18 @@ async function webhook(request, env) {
       : { pre_checkout_query_id: q.id, ok: false, error_message: "Покупка недоступна. Обнови приложение и попробуй снова." });
     return json({ ok: true });
   }
+
+  if (up.business_connection) {
+    const bc = up.business_connection;
+    const c = { uid: bc.user.id, chat: bc.user_chat_id, enabled: bc.is_enabled !== false, can_reply: bc.rights ? bc.rights.can_reply !== false : bc.can_reply !== false };
+    await env.DB.put("bc:" + bc.id, JSON.stringify(c), { expirationTtl: 7776000 });
+    await getUser(env, bc.user.id);
+    try {
+      await tgApi(env, "sendMessage", { chat_id: bc.user_chat_id, text: c.enabled ? (c.can_reply ? "Бот подключён к твоему аккаунту. В любом личном чате ответь командой /check на сообщение со ссылкой, IP, доменом, email, ником, номером, крипто-адресом, координатами, хешем или файлом, и результат придёт в чат." : "Бот подключён, но у него нет права отвечать. Включи «Управление сообщениями» в настройках автоматизации чатов.") : "Бот отключён от аккаунта." });
+    } catch (e) {}
+    return json({ ok: true });
+  }
+  if (up.business_message) { waitUntil(handleCheck(env, up.business_message, up.business_message.business_connection_id)); return json({ ok: true }); }
 
   const m = up.message;
   if (!m) return json({ ok: true });
@@ -177,7 +260,9 @@ async function webhook(request, env) {
 
   const text = (m.text || "").trim();
   try {
-    if (text.startsWith("/paysupport")) {
+    if (CMD.test(text)) {
+      waitUntil(handleCheck(env, m, null));
+    } else if (text.startsWith("/paysupport")) {
       await tgApi(env, "sendMessage", { chat_id: m.chat.id, text: `По оплате и возвратам: ${env.SUPPORT || "владельцу бота"}.` });
     } else if (text.startsWith("/start")) {
       await tgApi(env, "sendMessage", env.APP_URL
@@ -188,7 +273,8 @@ async function webhook(request, env) {
   return json({ ok: true });
 }
 
-export async function onRequest({ request, env }) {
+export async function onRequest(context) {
+  const { request, env } = context;
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api\/?/, "").replace(/\/$/, "");
   if (!env.BOT_TOKEN || !env.DB || !env.DB1) return json({ error: "not configured" }, 503);
@@ -201,7 +287,7 @@ export async function onRequest({ request, env }) {
   }
 
   if (request.method !== "POST") return json({ error: "method" }, 405);
-  if (path === "webhook") return webhook(request, env);
+  if (path === "webhook") return webhook(request, env, (p) => context.waitUntil(Promise.resolve(p).catch(() => {})));
 
   const me = await auth(request, env);
   if (!me) return json({ error: "auth" }, 401);
