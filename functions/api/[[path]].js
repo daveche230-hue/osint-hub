@@ -275,7 +275,20 @@ export async function onRequest({ request, env }) {
       const stat = await env.DB1
         .prepare("SELECT (SELECT COUNT(*) FROM users) AS users, (SELECT COUNT(*) FROM jobs) AS jobs, (SELECT COUNT(*) FROM ledger) AS ops")
         .first();
-      return json({ users: rows.results || [], stat });
+      const kl = await env.DB.list({ prefix: "viz:" });
+      return json({ users: rows.results || [], stat, viz: (kl.keys || []).map((k) => k.name) });
+    }
+
+    if (path === "admin/viz-upload") {
+      const id = String(body.id || "sledy");
+      const it = ITEMS[id];
+      if (!it || it.type !== "viz") return json({ error: "unknown" }, 400);
+      const html = String(body.html || "");
+      if (html.length < 500) return json({ error: "Файл пустой или слишком маленький" }, 400);
+      if (isHub(html)) return json({ error: "Это главная страница хаба, а не визуализатор" }, 400);
+      if (html.length > 20000000) return json({ error: "Файл больше 20 МБ" }, 413);
+      await env.DB.put(it.kv, html);
+      return json({ ok: true, size: html.length });
     }
 
     if (path === "admin/set") {
