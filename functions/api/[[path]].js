@@ -139,6 +139,8 @@ async function bizConn(env, id) {
   } catch (e) { return null; }
 }
 
+const H_ = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 async function handleCheck(env, m, bcid) {
   const cm = (m.text || m.caption || "").trim().match(CMD);
   if (!cm || !m.from) return;
@@ -189,9 +191,46 @@ async function handleCheck(env, m, bcid) {
 
   const to = rp ? rp.message_id : m.message_id;
   try { await send(out, { reply_parameters: { message_id: to } }); }
-  catch (e) { try { await send(out); } catch (e2) { return privately("Не удалось отправить ответ в чат: " + String((e2 && e2.message) || e2).slice(0, 150)); } }
+  catch (e) { try { await send(out); } catch (e2) { const why = String((e2 && e2.message) || e2); return privately("Не получилось отправить в чат (" + H_(why.slice(0, 120)) + ")." + (/BUSINESS_PEER_INVALID/.test(why) ? " Бот-ассистент может писать только в чаты, где собеседник писал за последние 24 часа." : "") + " Результат здесь:\n\n" + out); } }
 
   if (!free) await env.DB1.prepare("UPDATE users SET credits = credits - 1 WHERE id = ? AND credits >= 1").bind(owner).run();
+}
+
+/* ---- inline-режим: @бот запрос в любом чате ---- */
+const strip = (t) => String(t).replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+const sha256hex = async (t) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((x) => x.toString(16).padStart(2, "0")).join("");
+
+async function handleInline(env, q) {
+  const answer = (results) => tgApi(env, "answerInlineQuery", { inline_query_id: q.id, results, cache_time: 0, is_personal: true });
+  const art = (id, title, desc, text) => ({ type: "article", id, title, description: desc, input_message_content: { message_text: text, parse_mode: "HTML", link_preview_options: { is_disabled: true } } });
+  const text = (q.query || "").trim();
+  if (!text) return answer([art("hint", "Что проверить?", "Ссылка, IP, домен, email, ник, номер, крипто-адрес, координаты, хеш", H_(HELP))]);
+
+  const u = await getUser(env, q.from.id);
+  const free = u.unlimited || isOwner(env, q.from.id);
+  if (!free && u.credits < 1) return answer([art("nocred", "Запросы закончились", "Открой приложение: там бесплатные на сегодня и пакеты", "Запросы закончились. Открой приложение бота: там можно забрать бесплатные на сегодня или купить пакет.")]);
+
+  const key = "ic:" + (await sha256hex(text)).slice(0, 32);
+  let out = await env.DB.get(key);
+  if (!out) {
+    out = await Promise.race([analyze(text), new Promise((r) => setTimeout(() => r("__timeout"), 9000))]);
+    if (out === "__timeout") return answer([art("slow", "Сервисы отвечают слишком долго", "Попробуй ещё раз через несколько секунд", "Не удалось получить результат вовремя. Попробуй ещё раз.")]);
+    if (out) await env.DB.put(key, out, { expirationTtl: 600 });
+  }
+  if (!out) return answer([art("none", "Не нашёл, что тут проверять", "Нужна ссылка, IP, домен, email, ник, номер, адрес кошелька, координаты или хеш", "Не нашёл, что тут проверять.")]);
+  const lines = out.split("\n").filter((x) => x.trim());
+  const title = strip(lines[0] || "Результат").slice(0, 100);
+  const desc = lines.slice(1, 3).map(strip).join(" · ").slice(0, 200);
+  return answer([art("r" + (await sha256hex(text)).slice(0, 20), title, desc || "Нажми, чтобы отправить результат в чат", out)]);
+}
+
+/* списание запроса, когда человек действительно отправил результат в чат */
+async function handleChosen(env, c) {
+  if (!c.result_id || c.result_id[0] !== "r") return;
+  const uid = c.from.id;
+  const u = await getUser(env, uid);
+  if (u.unlimited || isOwner(env, uid)) return;
+  await env.DB1.prepare("UPDATE users SET credits = credits - 1 WHERE id = ? AND credits >= 1").bind(uid).run();
 }
 
 async function webhook(request, env, waitUntil) {
@@ -200,6 +239,9 @@ async function webhook(request, env, waitUntil) {
 
   let up;
   try { up = await request.json(); } catch (e) { return json({ error: "bad json" }, 400); }
+
+  if (up.inline_query) { waitUntil(handleInline(env, up.inline_query)); return json({ ok: true }); }
+  if (up.chosen_inline_result) { waitUntil(handleChosen(env, up.chosen_inline_result)); return json({ ok: true }); }
 
   if (up.pre_checkout_query) {
     const q = up.pre_checkout_query;
