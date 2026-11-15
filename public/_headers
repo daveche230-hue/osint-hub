@@ -1,6 +1,11 @@
 /*
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
   Access-Control-Allow-Headers: Content-Type, X-Init-Data
   Cache-Control: no-store
+
+/view.html
+  X-Robots-Tag: noindex
 
 /api/*
   Cache-Control: no-store
