@@ -178,6 +178,15 @@
   .adm{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .adm .b2{margin:0}
 
+  .ub{display:inline-block;vertical-align:middle;margin-left:10px;padding:4px 10px;border-radius:999px;background:var(--s2);color:var(--mut);font-size:12.5px;font-weight:600;letter-spacing:0;white-space:nowrap}
+  .ub.hide{display:none}
+  .ust{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 14px}
+  .ust div{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center}
+  .ust b{display:block;font-size:20px;font-weight:720}
+  .ust span{font-size:12px;color:var(--mut)}
+  .row[data-act="pick"]{cursor:pointer}
+  .row[data-act="pick"]:active{background:var(--s2)}
+
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -185,7 +194,7 @@
 
 <div id="list">
   <div class="head">
-    <h1>OSINT Hub</h1>
+    <h1>OSINT Hub<span class="ub hide" id="ub"></span></h1>
     <p>Проверки по открытым источникам</p>
   </div>
   <div id="wlt"></div>
@@ -917,8 +926,9 @@ async function openAdmin(){
   let d;
   try{ d=await api("admin/users") }catch(e){ sheet(`<div class="err">${esc(e.message)}</div>`); return }
   const s=d.stat||{};
-  sheet(`<h2>Админка</h2><p class="sp1">Пользователей: ${s.users||0} · задач: ${s.jobs||0} · операций: ${s.ops||0}</p>
-  <input class="f" id="adn" placeholder="@username или ID" autocomplete="off" autocapitalize="off" spellcheck="false">
+  sheet(`<h2>Админка</h2><p class="sp1">Выдача запросов и безлимита</p>
+  <div class="ust"><div><b>${s.users||0}</b><span>пользователей</span></div><div><b>${s.unl||0}</b><span>с безлимитом</span></div><div><b>${s.ops||0}</b><span>операций</span></div></div>
+  <input class="f" id="adn" placeholder="@username или ID (или нажми на пользователя ниже)" autocomplete="off" autocapitalize="off" spellcheck="false">
   <input class="f" id="ada" type="number" inputmode="numeric" placeholder="Сколько запросов выдать" style="margin-top:10px">
   <div class="adm">
     <button class="b2" data-act="adm" data-do="add">Выдать запросы</button>
@@ -933,7 +943,7 @@ async function openAdmin(){
   <input type="file" id="vzf" accept=".html,text/html" class="f" style="height:auto;padding:12px">
   <button class="b2 wide" data-act="vzup">Загрузить файл</button>
   <div class="gh">Последние пользователи</div>
-  <div class="grp">${(d.users||[]).slice(0,30).map(u=>`<div class="row"><div class="k">${esc(u.id)}</div><div class="v">${u.unlimited?"∞":esc(u.credits)}</div></div>`).join("")}</div>`);
+  <div class="grp">${(d.users||[]).slice(0,30).map(u=>`<div class="row" data-act="pick" data-id="${esc(u.id)}"><div class="k">${esc(u.id)}</div><div class="v ${u.unlimited?"ok":""}">${u.unlimited?"∞ безлимит":esc(u.credits)+" запросов"}</div></div>`).join("")}</div>`);
 }
 async function vzup(){
   const f=$("#vzf")?.files?.[0];
@@ -991,6 +1001,7 @@ document.addEventListener("click",async e=>{
   else if(k==="admin") await openAdmin();
   else if(k==="adm") await adm(a.dataset.do);
   else if(k==="vzup") await vzup();
+  else if(k==="pick"){ const i=$("#adn"); if(i){ i.value=a.dataset.id; toast("Выбран ID "+a.dataset.id) } }
 });
 $("#q").addEventListener("input",()=>{ sugg(); render(false) });
 $("#q").addEventListener("keydown",e=>{
@@ -1001,7 +1012,16 @@ document.addEventListener("keydown",e=>{
 });
 try{ tg?.BackButton?.onClick(()=>{ if(!$("#shade").classList.contains("hide")) closeSheet(); else if(cur) closeTool() }) }catch(e){}
 
-chips(); render(true); sugg(); loadMe();
+const plr=(n,a)=>{const m=n%10,x=n%100;return n+" "+(m===1&&x!==11?a[0]:(m>=2&&m<=4&&(x<10||x>=20))?a[1]:a[2])};
+async function loadStats(){
+  try{
+    const r=await fetch("/api/stats"); if(!r.ok) return;
+    const j=await r.json(); const b=$("#ub");
+    b.textContent=plr(j.users||0,["пользователь","пользователя","пользователей"]);
+    b.classList.remove("hide");
+  }catch(e){}
+}
+chips(); render(true); sugg(); loadMe(); loadStats();
 </script>
 <script src="/hub-plus.js"></script>
 </body>
