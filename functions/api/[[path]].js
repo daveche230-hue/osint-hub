@@ -26,9 +26,12 @@ const isHub = (s) => /<title>\s*OSINT Hub\s*<\/title>/i.test(String(s).slice(0, 
    Показывает красную плашку с текстом ошибки; если init не завершился за 5 с, убирает заставку.
    Когда причина найдена, поставь DEBUG_GUARD = false. */
 const DEBUG_GUARD = true;
-const GUARD = `<script>(function(){function show(t){var d=document.createElement('pre');d.style.cssText='position:fixed;z-index:2147483647;left:8px;right:8px;top:8px;margin:0;padding:8px;background:#300;color:#fbb;font:12px monospace;white-space:pre-wrap';d.textContent=t;(document.body||document.documentElement).appendChild(d)}
-window.addEventListener('error',function(e){show((e.message||'error')+' @'+(e.lineno||'')+':'+(e.colno||''))});
-window.addEventListener('unhandledrejection',function(e){show('promise: '+((e.reason&&e.reason.message)||e.reason))});
+const GUARD = `<script>(function(){var box;function show(t){if(!box){box=document.createElement('div');box.style.cssText='position:fixed;z-index:2147483647;left:8px;right:8px;top:8px;max-height:70vh;overflow:auto;display:flex;flex-direction:column;gap:4px';(document.body||document.documentElement).appendChild(box)}var d=document.createElement('pre');d.style.cssText='margin:0;padding:8px;background:#300;color:#fbb;font:12px monospace;white-space:pre-wrap;word-break:break-all';d.textContent=t;box.appendChild(d)}
+window.addEventListener('error',function(e){show('ERR: '+(e.message||'error')+' @'+(e.lineno||'')+':'+(e.colno||'')+' '+String(e.filename||'').slice(-40))});
+window.addEventListener('unhandledrejection',function(e){show('PROMISE: '+((e.reason&&e.reason.message)||e.reason))});
+window.addEventListener('DOMContentLoaded',function(){setTimeout(function(){var ss=document.querySelectorAll('script'),big='',i;for(i=0;i<ss.length;i++){var s=ss[i].textContent||'';if(s.length>big.length)big=s}
+show('scripts: '+ss.length+', main len: '+big.length+' | head: '+big.slice(0,40).replace(/\\n/g,' ')+' | tail: '+big.slice(-80).replace(/\\n/g,' '));
+try{new Function(big)}catch(x){show('SYNTAX: '+x.message)}},0)});
 setTimeout(function(){var p=document.getElementById('splash');if(p){show('init не завершился за 5 с');p.remove()}},5000)})()<\/script>`;
 
 async function tgApi(env, method, body) {
