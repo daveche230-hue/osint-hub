@@ -25,7 +25,7 @@ const isHub = (s) => /<title>\s*OSINT Hub\s*<\/title>/i.test(String(s).slice(0, 
 /* ОТЛАДКА: скрипт-перехватчик ошибок. Вставляется сразу после <body>, до основного скрипта доски.
    Показывает красную плашку с текстом ошибки; если init не завершился за 5 с, убирает заставку.
    Когда причина найдена, поставь DEBUG_GUARD = false. */
-const DEBUG_GUARD = true;
+const DEBUG_GUARD = false;
 const GUARD = `<script>(function(){var box;function show(t){if(!box){box=document.createElement('div');box.style.cssText='position:fixed;z-index:2147483647;left:8px;right:8px;top:8px;max-height:70vh;overflow:auto;display:flex;flex-direction:column;gap:4px';(document.body||document.documentElement).appendChild(box)}var d=document.createElement('pre');d.style.cssText='margin:0;padding:8px;background:#300;color:#fbb;font:12px monospace;white-space:pre-wrap;word-break:break-all';d.textContent=t;box.appendChild(d)}
 window.addEventListener('error',function(e){show('ERR: '+(e.message||'error')+' @'+(e.lineno||'')+':'+(e.colno||'')+' '+String(e.filename||'').slice(-40))});
 window.addEventListener('unhandledrejection',function(e){show('PROMISE: '+((e.reason&&e.reason.message)||e.reason))});
@@ -96,6 +96,8 @@ async function vizOpen(url, env) {
     if (txt && !isHub(txt)) html = txt;
   }
   if (!html) return page("Файл визуализатора не найден (" + where + ").", 404);
+  /* защита от обрезанного файла в KV: в конце должен быть закрывающий тег */
+  if (!/<\/html>\s*$/i.test(html)) return page("Файл визуализатора обрезан (" + html.length + " символов, нет &lt;/html&gt; в конце). Загрузи его заново целиком.", 500);
 
   /* отладочный перехватчик ошибок: сразу после <body>, до скриптов доски */
   if (DEBUG_GUARD) {
@@ -462,6 +464,7 @@ export async function onRequest(context) {
       const html = String(body.html || "");
       if (html.length < 500) return json({ error: "Файл пустой или слишком маленький" }, 400);
       if (isHub(html)) return json({ error: "Это главная страница хаба, а не визуализатор" }, 400);
+      if (!/<\/html>\s*$/i.test(html)) return json({ error: "Файл обрезан: в конце нет </html> (получено " + html.length + " символов)" }, 400);
       if (html.length > 20000000) return json({ error: "Файл больше 20 МБ" }, 413);
       await env.DB.put(it.kv, html);
       return json({ ok: true, size: html.length });
