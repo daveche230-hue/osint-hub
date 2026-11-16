@@ -124,7 +124,6 @@ async function vizRevoke(env, uid) {
   return keys.length;
 }
 
-
 /* ---- автоматизация чатов (Telegram Business) и команда /check ---- */
 const CMD = /^\/(check|chek|c|чек)(?:@\w+)?(?:\s+([\s\S]+))?$/i;
 
@@ -190,8 +189,29 @@ async function handleCheck(env, m, bcid) {
   if (!out) return privately(text ? "Не нашёл, что тут проверять." : HELP);
 
   const to = rp ? rp.message_id : m.message_id;
-  try { await send(out, { reply_parameters: { message_id: to } }); }
-  catch (e) { try { await send(out); } catch (e2) { const why = String((e2 && e2.message) || e2); return privately("Не получилось отправить в чат (" + H_(why.slice(0, 120)) + ")." + (/BUSINESS_PEER_INVALID/.test(why) ? " Бот-ассистент может писать только в чаты, где собеседник писал за последние 24 часа." : "") + " Результат здесь:\n\n" + out); } }
+  try {
+    await send(out, { reply_parameters: { message_id: to } });
+  } catch (e) {
+    try {
+      await send(out);
+    } catch (e2) {
+      if (bcid) {
+        try {
+          await tgApi(env, "sendMessage", {
+            chat_id: m.chat.id,
+            text: out,
+            parse_mode: "HTML",
+            link_preview_options: { is_disabled: true },
+          });
+        } catch (e3) {
+          return privately("Не удалось отправить в чат, результат здесь:\n\n" + out);
+        }
+      } else {
+        const why = String((e2 && e2.message) || e2);
+        return privately("Не получилось отправить в чат (" + H_(why.slice(0, 120)) + "). Результат здесь:\n\n" + out);
+      }
+    }
+  }
 
   if (!free) await env.DB1.prepare("UPDATE users SET credits = credits - 1 WHERE id = ? AND credits >= 1").bind(owner).run();
 }
