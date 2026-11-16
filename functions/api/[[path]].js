@@ -22,6 +22,15 @@ const page = (text, status) =>
 /* главная страница хаба не должна выдаваться за визуализатор */
 const isHub = (s) => /<title>\s*OSINT Hub\s*<\/title>/i.test(String(s).slice(0, 4000));
 
+/* ОТЛАДКА: скрипт-перехватчик ошибок. Вставляется сразу после <body>, до основного скрипта доски.
+   Показывает красную плашку с текстом ошибки; если init не завершился за 5 с, убирает заставку.
+   Когда причина найдена, поставь DEBUG_GUARD = false. */
+const DEBUG_GUARD = true;
+const GUARD = `<script>(function(){function show(t){var d=document.createElement('pre');d.style.cssText='position:fixed;z-index:2147483647;left:8px;right:8px;top:8px;margin:0;padding:8px;background:#300;color:#fbb;font:12px monospace;white-space:pre-wrap';d.textContent=t;(document.body||document.documentElement).appendChild(d)}
+window.addEventListener('error',function(e){show((e.message||'error')+' @'+(e.lineno||'')+':'+(e.colno||''))});
+window.addEventListener('unhandledrejection',function(e){show('promise: '+((e.reason&&e.reason.message)||e.reason))});
+setTimeout(function(){var p=document.getElementById('splash');if(p){show('init не завершился за 5 с');p.remove()}},5000)})()<\/script>`;
+
 async function tgApi(env, method, body) {
   const r = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/${method}`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -84,6 +93,17 @@ async function vizOpen(url, env) {
     if (txt && !isHub(txt)) html = txt;
   }
   if (!html) return page("Файл визуализатора не найден (" + where + ").", 404);
+
+  /* отладочный перехватчик ошибок: сразу после <body>, до скриптов доски */
+  if (DEBUG_GUARD) {
+    const m = /<body[^>]*>/i.exec(html);
+    if (m) {
+      const at = m.index + m[0].length;
+      html = html.slice(0, at) + GUARD + html.slice(at);
+    } else {
+      html = GUARD + html;
+    }
+  }
 
   /* водяной знак с ID покупателя и импорт доски */
   let extra = `<div style="position:fixed;right:8px;bottom:6px;font:10px monospace;opacity:.3;pointer-events:none;z-index:2147483647">ID ${Number(uid)}</div>`;
