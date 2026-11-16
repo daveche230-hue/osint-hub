@@ -1,57 +1,48 @@
-/* Быстрая выдача безлимита: поле на главном экране, видно только админу.
-   Подключается одной строкой в index.html: <script src="/admin-quick.js"></script> */
-(function () {
-  const tg = window.Telegram && window.Telegram.WebApp;
-  const w = document.getElementById("adw");
-  if (!w) return;
+(() => {
+  const mount = () => {
+    const adw = document.getElementById("adw");
+    if (!adw || !adw.querySelector('[data-act="admin"]') || document.getElementById("qa-box")) return;
 
-  const toast = (m) => {
-    const t = document.getElementById("toast");
-    if (!t) return;
-    t.textContent = m;
-    t.classList.add("on");
-    setTimeout(() => t.classList.remove("on"), 2400);
+    const wrap = document.createElement("div");
+    wrap.id = "qa-box";
+    wrap.style.cssText = "display:flex;gap:8px;margin-top:10px";
+    wrap.innerHTML = `
+      <input id="qa-in" class="f" style="height:42px;font-size:14px" placeholder="@username или ID" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button id="qa-btn" class="b2" style="margin:0;white-space:nowrap;background:var(--acc);color:var(--acc-fg);border:0">∞ Безлимит</button>
+    `;
+    adw.appendChild(wrap);
+
+    const grant = async () => {
+      const inp = document.getElementById("qa-in");
+      const btn = document.getElementById("qa-btn");
+      const v = inp.value.trim();
+      if (!v) return alert("Введи @username или ID");
+      btn.disabled = true;
+      try {
+        const hdr = { "Content-Type": "application/json", "X-Init-Data": window.Telegram?.WebApp?.initData || "" };
+        let id = /^\d+$/.test(v) ? Number(v) : null;
+        if (!id) {
+          const r1 = await fetch("/api/admin/find", { method: "POST", headers: hdr, body: JSON.stringify({ username: v }) });
+          const d1 = await r1.json();
+          if (!r1.ok) throw new Error(d1.error || "Юзер не найден (пусть сначала нажмёт /start в боте)");
+          id = d1.id;
+        }
+        const r2 = await fetch("/api/admin/set", { method: "POST", headers: hdr, body: JSON.stringify({ id, unlimited: true }) });
+        const d2 = await r2.json();
+        if (!r2.ok) throw new Error(d2.error || "Ошибка выдачи");
+        inp.value = "";
+        alert(`Готово! Безлимит включён для ID ${d2.user.id}`);
+      } catch (e) {
+        alert(e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    document.getElementById("qa-btn").onclick = grant;
+    document.getElementById("qa-in").onkeydown = (e) => { if (e.key === "Enter") grant(); };
   };
 
-  async function api(path, body) {
-    const r = await fetch("/api/" + path, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Init-Data": (tg && tg.initData) || "" },
-      body: JSON.stringify(body || {}),
-    });
-    let j = {};
-    try { j = await r.json(); } catch (e) {}
-    if (!r.ok) throw new Error(j.error || j.detail || "Ошибка " + r.status);
-    return j;
-  }
-
-  async function grant() {
-    const i = document.getElementById("qa");
-    const v = ((i && i.value) || "").trim();
-    if (!v) return toast("Вставь @username или ID");
-    try {
-      const id = /^\d+$/.test(v) ? +v : (await api("admin/find", { username: v })).id;
-      const r = await api("admin/set", { id, unlimited: true });
-      toast("Безлимит выдан: ID " + r.user.id);
-      i.value = "";
-    } catch (e) {
-      toast(e.message);
-    }
-  }
-
-  function mount() {
-    // поле появляется только когда админка включена (есть кнопка «Админка»)
-    if (!w.querySelector('[data-act="admin"]') || w.querySelector("#qa")) return;
-    w.insertAdjacentHTML(
-      "afterbegin",
-      '<div class="srch" style="margin-top:10px;padding-right:8px">' +
-        '<input id="qa" placeholder="Безлимит: @username или ID" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send">' +
-        '<button class="vbuy" id="qab">Выдать</button></div>'
-    );
-  }
-
-  w.addEventListener("click", (e) => { if (e.target.closest("#qab")) grant(); });
-  w.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.id === "qa") grant(); });
-  new MutationObserver(mount).observe(w, { childList: true });
+  new MutationObserver(mount).observe(document.body, { childList: true, subtree: true });
   mount();
 })();
