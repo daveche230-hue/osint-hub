@@ -326,18 +326,22 @@ async function handleDot(env, m, bcid) {
   }
 
   if (cmd === "afk") {
-    if (arg.toLowerCase() === "off") {
-      await env.DB.delete("afk:" + conn.uid);
-      await priv("Автоответчик выключен.");
-    } else {
-      const reply = arg || "Сейчас не на связи, отвечу позже.";
-      await env.DB.put("afk:" + conn.uid, reply);
-      await priv("Автоответчик включён. Каждому, кто напишет, уйдёт:\n\n" + reply + "\n\nВыключить: .afk off");
-    }
+    await priv(await setAfk(env, conn.uid, arg));
     await delCmd();
     return true;
   }
   return false;
+}
+
+/* включает/выключает автоответчик сразу для всех личных чатов аккаунта; возвращает текст-подтверждение */
+async function setAfk(env, uid, arg) {
+  if (arg.toLowerCase() === "off") {
+    await env.DB.delete("afk:" + uid);
+    return "Автоответчик выключен.";
+  }
+  const reply = arg || "Сейчас не на связи, отвечу позже.";
+  await env.DB.put("afk:" + uid, reply);
+  return "Автоответчик включён во всех личных чатах. Каждому, кто напишет, уйдёт:\n\n" + reply + "\n\nВыключить: .afk off";
 }
 
 /* ---- inline-режим: @бот запрос в любом чате ---- */
@@ -452,7 +456,11 @@ async function webhook(request, env, waitUntil) {
 
   const text = (m.text || "").trim();
   try {
-    if (CMD.test(text)) {
+    const af = m.chat && m.chat.type === "private" && m.from && text.match(/^\.afk(?:\s+([\s\S]+))?$/i);
+    if (af) {
+      /* .afk в личке с ботом: тот же автоответчик, действует во всех личных чатах подключённого аккаунта */
+      await tgApi(env, "sendMessage", { chat_id: m.chat.id, text: await setAfk(env, m.from.id, (af[1] || "").trim()) });
+    } else if (CMD.test(text)) {
       waitUntil(handleCheck(env, m, null));
     } else if (text.startsWith("/paysupport")) {
       await tgApi(env, "sendMessage", { chat_id: m.chat.id, text: `По оплате и возвратам: ${env.SUPPORT || "владельцу бота"}.` });
