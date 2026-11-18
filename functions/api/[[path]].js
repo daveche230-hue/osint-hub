@@ -241,6 +241,105 @@ async function handleCheck(env, m, bcid) {
   if (!free) await env.DB1.prepare("UPDATE users SET credits = credits - 1 WHERE id = ? AND credits >= 1").bind(owner).run();
 }
 
+/* ---- точечные команды в бизнес-чатах: .spam/.repeat .type .del .id .afk ----
+   .afk текст : включает автоответчик, этот текст уходит каждому, кто тебе пишет
+   .afk off   : выключает */
+const DOT = /^\.(spam|repeat|type|del|id|afk)(?:\s+([\s\S]+))?$/i;
+const MAX_REPEAT = 15; /* потолок повторов за один раз */
+const AFK_COOLDOWN = 3600; /* автоответ одному и тому же чату не чаще чем раз в N секунд (минимум для KV: 60) */
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function handleDot(env, m, bcid) {
+  if (!m.from) return false;
+  const conn = await bizConn(env, bcid);
+  if (!conn || !conn.enabled) return false;
+
+  /* сообщение от собеседника: если включён .afk, отвечаем твоим текстом */
+  if (String(conn.uid) !== String(m.from.id)) {
+    if (m.from.is_bot || conn.can_reply === false) return true;
+    const afk = await env.DB.get("afk:" + conn.uid);
+    if (afk) {
+      const seen = `afks:${conn.uid}:${m.chat.id}`;
+      if (!(await env.DB.get(seen))) {
+        await env.DB.put(seen, "1", { expirationTtl: Math.max(60, AFK_COOLDOWN) });
+        try { await tgApi(env, "sendMessage", { chat_id: m.chat.id, text: afk, business_connection_id: bcid }); } catch (e) {}
+      }
+    }
+    return true;
+  }
+
+  const cm = (m.text || "").trim().match(DOT);
+  if (!cm || conn.can_reply === false) return false;
+  const cmd = cm[1].toLowerCase();
+  const arg = (cm[2] || "").trim();
+  const chat = m.chat.id;
+  const biz = { business_connection_id: bcid };
+  const say = (text) => tgApi(env, "sendMessage", { chat_id: chat, text, ...biz });
+  const priv = async (text) => { try { await tgApi(env, "sendMessage", { chat_id: conn.uid, text }); } catch (e) {} };
+  const del = (ids) => tgApi(env, "deleteBusinessMessages", { business_connection_id: bcid, message_ids: ids });
+  const delCmd = async () => { try { await del([m.message_id]); } catch (e) {} };
+
+  if (cmd === "spam" || cmd === "repeat") {
+    const mm = arg.match(/^(\d+)\s+([\s\S]+)$/);
+    if (!mm) { await priv("Формат: .spam 5 привет"); return true; }
+    const n = Math.min(Math.max(Number(mm[1]), 1), MAX_REPEAT);
+    await delCmd();
+    for (let i = 0; i < n; i++) {
+      try { await say(mm[2]); } catch (e) { break; }
+      if (i < n - 1) await sleep(1100);
+    }
+    if (Number(mm[1]) > MAX_REPEAT) await priv(`Отправил ${n}: потолок за раз ${MAX_REPEAT}.`);
+    return true;
+  }
+
+  if (cmd === "type") {
+    if (!arg) return true;
+    const text = arg.slice(0, 200);
+    const steps = Math.min(text.length, 12);
+    await delCmd();
+    let msg = null;
+    for (let i = 1; i <= steps; i++) {
+      const part = text.slice(0, Math.ceil((text.length * i) / steps));
+      const shown = i < steps ? part + "▌" : part;
+      try {
+        if (!msg) msg = (await say(shown)).result;
+        else await tgApi(env, "editMessageText", { chat_id: chat, message_id: msg.message_id, text: shown, ...biz });
+      } catch (e) { break; }
+      if (i < steps) await sleep(700);
+    }
+    return true;
+  }
+
+  if (cmd === "del") {
+    const ids = [m.message_id];
+    if (m.reply_to_message) ids.push(m.reply_to_message.message_id);
+    try { await del(ids); }
+    catch (e) { await priv("Не удалил: включи боту право удалять сообщения в настройках автоматизации чатов."); }
+    return true;
+  }
+
+  if (cmd === "id") {
+    const rp = m.reply_to_message;
+    await priv(`chat: ${chat}` + (rp && rp.from ? `\nuser: ${rp.from.id}` : ""));
+    await delCmd();
+    return true;
+  }
+
+  if (cmd === "afk") {
+    if (arg.toLowerCase() === "off") {
+      await env.DB.delete("afk:" + conn.uid);
+      await priv("Автоответчик выключен.");
+    } else {
+      const reply = arg || "Сейчас не на связи, отвечу позже.";
+      await env.DB.put("afk:" + conn.uid, reply);
+      await priv("Автоответчик включён. Каждому, кто напишет, уйдёт:\n\n" + reply + "\n\nВыключить: .afk off");
+    }
+    await delCmd();
+    return true;
+  }
+  return false;
+}
+
 /* ---- inline-режим: @бот запрос в любом чате ---- */
 const strip = (t) => String(t).replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 const sha256hex = async (t) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((x) => x.toString(16).padStart(2, "0")).join("");
@@ -313,7 +412,13 @@ async function webhook(request, env, waitUntil) {
     } catch (e) {}
     return json({ ok: true });
   }
-  if (up.business_message) { waitUntil(handleCheck(env, up.business_message, up.business_message.business_connection_id)); return json({ ok: true }); }
+  if (up.business_message) {
+    const bm = up.business_message;
+    waitUntil((async () => {
+      if (!(await handleDot(env, bm, bm.business_connection_id))) await handleCheck(env, bm, bm.business_connection_id);
+    })());
+    return json({ ok: true });
+  }
 
   const m = up.message;
   if (!m) return json({ ok: true });
